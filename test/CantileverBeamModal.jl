@@ -136,6 +136,8 @@ Nelem2 = 20,
 angleD = 0.0, # angle of second section of beam relative to first (0 is straight)
 zeroOffset = 0.0)#r_b1[1]) #offset from 0 before first beam begins
 
+ort.Twist_d .= 180.0 #enforce flatwise orientation
+
 # Create Sectional Properties
 sectionPropsArray = Array{GyricFEA.SectionPropsArray, 1}(undef, length(mesh.z)-1)
 

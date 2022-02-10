@@ -1,6 +1,7 @@
 """
 
-staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorag
+staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
+    reactionNodeNumber=1, OmegaDot=0.0, Fdof=[1], Fexternal=[0.0])
 
 This function performs a static analysis and returns displacement
 values and a flag denoting successful/unsuccessful analysis
@@ -13,12 +14,17 @@ values and a flag denoting successful/unsuccessful analysis
 * `Omega`:          rotor speed (Hz)
 * `OmegaStart`:     rotor speed (Hz) from previous analysis if stepping through various rotor speeds, may be useful in load stepping
 * `elStorage`:      previously calculated element system matrices
-
+* `reactionNodeNumber::Int`: optional, node at which to calculate reaction force
+* `OmegaDot::Float`: Steady State Rotational Acceleration
+* `Fdof::Array{<:Int}`: Global Dofs where Fexternal is acting, where max dof = nelem*ndof
+* `Fexternal{<:Float}`: Forces or moments associated with the Fdofs specified
 #Outputs
 * `displ`:                    vector of displacemetns
 * `staticAnalysisSuccessful`: boolean flag denoting successful static analysis
 """
-function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage)
+function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
+    reactionNodeNumber=1, OmegaDot=0.0, Fdof=[1], Fexternal=[0.0])
+
     feamodel.analysisType = "S" #Force type to align with the static/steady call
 
     # x = mesh.x
@@ -74,12 +80,12 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage)
             Kg = zero(Kg1)
             Fg = zero(Fg1)
             TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,displ,Omega,elStorage;
-                Kg,Fg,iterationCount,dispOld,loadStepPrev,loadStep)
+                Kg,Fg,iterationCount,dispOld,loadStepPrev,loadStep,OmegaDot)
 
             # Fexternal, Fdof = externalForcingStatic()  #TODO: get arbitrary external loads from externalForcingStatic() function
-            # for i=1:length(Fdof)
-            #     Fg[Fdof[i]] =  Fg[Fdof[i]] + Fexternal[i]*loadStep #modify assembled global load vector for external loads
-            # end
+            for i=1:length(Fdof)
+                Fg[Fdof[i]] =  Fg[Fdof[i]] + Fexternal[i]*loadStep #modify assembled global load vector for external loads
+            end
 
             #----------------------------------------------------------------------
 
@@ -135,8 +141,14 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage)
     #         elStorage,[],[],displ,[],Omega,0,[])
 
     elStrain = calculateStrainForElements(mesh.numEl,numNodesPerEl,numDOFPerNode,conn,elementOrder,el,displ,feamodel.nlOn)
+    #feamodel.platformTurbineConnectionNodeNumber #TODO: multiple points?  the whole mesh?
+    timeInt = nothing
+    dispData = copy(displ)
+    rbData = zeros(9)
+    CN2H = 1.0*LinearAlgebra.I(3)
+    FReaction = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ,rbData,Omega,0.0,CN2H)
 
-    return displ,elStrain,staticAnalysisSuccessful
+    return displ,elStrain,staticAnalysisSuccessful,FReaction
 
 end
 

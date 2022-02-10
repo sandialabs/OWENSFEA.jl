@@ -335,26 +335,24 @@ end
 Struct containing element straing
 
 # Inputs
-* `eps_xx_0::float`: eps_xx_0
-* `eps_xx_z::float`: eps_xx_z
-* `eps_xx_y::float`: eps_xx_y
-* `gam_xz_0::float`: gam_xz_0
-* `gam_xz_y::float`: gam_xz_y
-* `gam_xy_0::float`: gam_xy_0
-* `gam_xy_z::float`: gam_xy_z
+* `epsilon_x::float`: epsilon_x strain in the x direction
+* `epsilon_y::float`: epsilon_y strain in the y direction
+* `epsilon_z::float`: epsilon_z strain in the z direction
+* `kappa_x::float`: kappa_x curvature in the x direction
+* `kappa_y::float`: kappa_y curvature in the y direction
+* `kappa_z::float`: kappa_z curvature in the z direction
 
 # Outputs:
 * `none`:
 
 """
 mutable struct ElStrain
-    eps_xx_0
-    eps_xx_z
-    eps_xx_y
-    gam_xz_0
-    gam_xz_y
-    gam_xy_0
-    gam_xy_z
+    epsilon_x
+    epsilon_y
+    epsilon_z
+    kappa_x
+    kappa_y
+    kappa_z
 end
 
 # TODO: get rid of these 3 or four line structs and replace with data arrays

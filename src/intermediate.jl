@@ -205,7 +205,7 @@ function TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,dispData,Omega,elStorage;
 
         #get concentrated terms associated with elemetn
         #TODO: verify that concentrated mass associated with elements doesn't get double counted for joints, if you just add concetrated terms to platform node, then it isn't a concern
-        concMass,concStiff,concLoad,feamodel.joint,nodalTerms.concMass,nodalTerms.concStiff = ConcMassAssociatedWithElement(conn[i,:],feamodel.joint,nodalTerms.concMass,nodalTerms.concStiff,nodalTerms.concLoad)
+        concMass,concStiff,concLoad,feamodel.joint,nodalTerms.concMass,nodalTerms.concStiff,nodalTerms.concLoad = ConcMassAssociatedWithElement(conn[i,:],feamodel.joint,nodalTerms.concMass,nodalTerms.concStiff,nodalTerms.concLoad)
 
         if el.rotationalEffects[i]!=1
             Omega = 0.0

@@ -227,17 +227,10 @@ function runme(islinear)
         Fexternal = []
         Fdof = []
 
-        elStrain = fill(GyricFEA.ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)), mesh.numEl)
+        elStrain = fill(GyricFEA.ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)), mesh.numEl)
         dispOut = GyricFEA.DispOut(elStrain,zeros(492,492),zeros(492,492),zeros(492,492)) #TODO: not hard coded
         FReactionHist = zeros(numTS+1,6)
         aziHist = zeros(numTS+1)
-        eps_xx_0_hist = zeros(4,mesh.numEl,numTS)
-        eps_xx_z_hist = zeros(4,mesh.numEl,numTS)
-        eps_xx_y_hist = zeros(4,mesh.numEl,numTS)
-        gam_xz_0_hist = zeros(4,mesh.numEl,numTS)
-        gam_xz_y_hist = zeros(4,mesh.numEl,numTS)
-        gam_xy_0_hist = zeros(4,mesh.numEl,numTS)
-        gam_xy_z_hist = zeros(4,mesh.numEl,numTS)
 
         FReactionsm1 = zeros(6)
         FReactionHist[1,:] = FReactionsm1
@@ -290,15 +283,6 @@ function runme(islinear)
             uHist[ii,:,i+1] = u_s
             FReactionHist[i+1,:] = FReaction_j
             aziHist[i+1] = azi_s
-            for ii = 1:length(elStrain)
-                eps_xx_0_hist[:,ii,i] = elStrain[ii].eps_xx_0
-                eps_xx_z_hist[:,ii,i] = elStrain[ii].eps_xx_z
-                eps_xx_y_hist[:,ii,i] = elStrain[ii].eps_xx_y
-                gam_xz_0_hist[:,ii,i] = elStrain[ii].gam_xz_0
-                gam_xz_y_hist[:,ii,i] = elStrain[ii].gam_xz_y
-                gam_xy_0_hist[:,ii,i] = elStrain[ii].gam_xy_0
-                gam_xy_z_hist[:,ii,i] = elStrain[ii].gam_xy_z
-            end # while
 
         end # time stepping
 

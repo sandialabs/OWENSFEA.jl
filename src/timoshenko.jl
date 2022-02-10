@@ -1281,7 +1281,7 @@ function calculateTimoshenkoElementStrain(elementOrder,nlOn,xloc,sectionProps,sw
     #calculate quad points
     xi,_ = getGP(numGP)
 
-    p_disp_x = zeros(numGP,6)
+    # p_disp_x = zeros(numGP,6)
 
     #Initialize element sub matrices and sub vectors
 
@@ -1300,13 +1300,12 @@ function calculateTimoshenkoElementStrain(elementOrder,nlOn,xloc,sectionProps,sw
     theta_zNode = [dispLocal[6]  dispLocal[12]]
 
     #Integration loop
-    eps_xx_0 = zeros(numGP)
-    eps_xx_z = zeros(numGP)
-    eps_xx_y = zeros(numGP)
-    gam_xz_0 = zeros(numGP)
-    gam_xz_y = zeros(numGP)
-    gam_xy_0 = zeros(numGP)
-    gam_xy_z = zeros(numGP)
+    epsilon_x = zeros(numGP)
+    epsilon_y = zeros(numGP)
+    epsilon_z = zeros(numGP)
+    kappa_x = zeros(numGP)
+    kappa_y = zeros(numGP)
+    kappa_z = zeros(numGP)
     for i=1:numGP
         #Calculate shape functions at quad point i
         N,p_N_x,_ = calculateShapeFunctions(elementOrder,xi[i],xloc)
@@ -1332,22 +1331,21 @@ function calculateTimoshenkoElementStrain(elementOrder,nlOn,xloc,sectionProps,sw
         theta_y_gp = interpolateVal(theta_yNode,N5)
         theta_z_prime = interpolateVal(theta_zNode,p_N6_x)
         theta_z_gp = interpolateVal(theta_zNode,N6)
-        p_disp_x[i,:] = [uprime, vprime, wprime, theta_x_prime, theta_y_prime, theta_z_prime]
+        # p_disp_x[i,:] = [uprime, vprime, wprime, theta_x_prime, theta_y_prime, theta_z_prime]
 
         if nlOn
-            eps_xx_0[i] = uprime + 0.5*(wprime^2 + vprime^2)
+            epsilon_x[i] = uprime + 0.5*(wprime^2 + vprime^2)
         else
-            eps_xx_0[i] = uprime
+            epsilon_x[i] = uprime
         end
-        eps_xx_z[i] = theta_y_prime
-        eps_xx_y[i] = -theta_z_prime
-        gam_xz_0[i] =  theta_y_gp + wprime
-        gam_xz_y[i] =  theta_x_prime
-        gam_xy_0[i] = -theta_z_gp + vprime
-        gam_xy_z[i] =  -theta_x_prime
+        epsilon_y[i] = -theta_z_gp + vprime
+        epsilon_z[i] =  theta_y_gp + wprime
+        kappa_x[i] =  theta_x_prime
+        kappa_y[i] = theta_y_prime
+        kappa_z[i] = -theta_z_prime
     end #END OF INTEGRATION LOOP
 
-    return ElStrain(eps_xx_0,eps_xx_z,eps_xx_y,gam_xz_0,gam_xz_y,gam_xy_0,gam_xy_z)
+    return ElStrain(epsilon_x,epsilon_y,epsilon_z,kappa_x,kappa_y,kappa_z)
 end
 
 """

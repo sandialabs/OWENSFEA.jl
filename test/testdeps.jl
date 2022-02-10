@@ -45,13 +45,6 @@ function mesh_beam(;L1 = 31.5, #first section of beam length
         mesh_z = [mesh_z1;mesh_z2]
     end
 
-    #space out the mesh numerically to avoid numerical issues
-    for i = 1:length(mesh_x)-1
-        if isapprox(mesh_x[i],mesh_x[i+1];atol = 1e-6)
-            mesh_x[i+1] -= 1e-4
-        end
-    end
-
     numNodes = length(mesh_z)
     nodeNum = collect(LinRange(1,numNodes,numNodes))
     numEl = length(conn[:,1])
