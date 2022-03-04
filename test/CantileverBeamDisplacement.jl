@@ -480,128 +480,128 @@ _, _, _, deformedxyz_nl,_,Ux_beam_nl, uHist_nl,_,epsilon_x_hist,epsilon_y_hist,e
 #
 #     PyPlot.figure()
 #     PyPlot.title("Load: $(P[iload]) N")
-#     PyPlot.plot(meshx,meshz,"k-",label="Undeformed")
-#     PyPlot.plot(pointvec[:,3]+deformedxyz[:,3,iload]*deformFact,pointvec[:,1]+deformedxyz[:,1,iload]*deformFact.+0.005,"-",color=plot_cycle[2],label="GXBeam")
-#     PyPlot.plot((meshx+Ux*deformFact),(meshz+Uz*deformFact),"-",color=plot_cycle[1],label="OWENS")
-#     PyPlot.plot(pointvec[:,3]+deformedxyz_nl[:,3,iload]*deformFact,pointvec[:,1]+deformedxyz_nl[:,1,iload]*deformFact,"--",color=plot_cycle[2],label="GXBeam Nonlinear")
-#     PyPlot.plot((meshx+Ux_nl*deformFact),(meshz+Uz_nl*deformFact),"--",color=plot_cycle[1],label="OWENS Nonlinear")
+#     PyPlot.plot(meshx./L,meshz./L,"k-",label="Undeformed")
+#     PyPlot.plot((pointvec[:,3]+deformedxyz[:,3,iload]*deformFact)./L,(pointvec[:,1]+deformedxyz[:,1,iload]*deformFact.+0.005)./L,"-",color=plot_cycle[2],label="GXBeam")
+#     PyPlot.plot((meshx+Ux*deformFact)./L,(meshz+Uz*deformFact)./L,"-",color=plot_cycle[1],label="OWENS")
+#     PyPlot.plot((pointvec[:,3]+deformedxyz_nl[:,3,iload]*deformFact)./L,(pointvec[:,1]+deformedxyz_nl[:,1,iload]*deformFact)./L,"--",color=plot_cycle[2],label="GXBeam Nonlinear")
+#     PyPlot.plot((meshx+Ux_nl*deformFact)./L,(meshz+Uz_nl*deformFact)./L,"--",color=plot_cycle[1],label="OWENS Nonlinear")
 #     PyPlot.legend()
-#     PyPlot.xlabel("x-position (m)")
-#     PyPlot.ylabel("y-position (m)")
+#     PyPlot.xlabel("x/L")
+#     PyPlot.ylabel("y/L")
 #     PyPlot.axis("equal")
 #     PyPlot.xlim([0,0.5])
-#     # PyPlot.savefig("./deformedmesh_$iload.pdf",transparent = true)
+#     PyPlot.savefig("./deformedmesh_$iload.pdf",transparent = true)
 #
-#     # Strain
-#     epsilon_x1 = epsilon_x_hist[iload,1,:,end]
-#     epsilon_x2 = epsilon_x_hist[iload,2,:,end]
-#     epsilon_x3 = epsilon_x_hist[iload,3,:,end]
-#     epsilon_x4 = epsilon_x_hist[iload,4,:,end]
-#
-#     epsilon_y1 = epsilon_y_hist[iload,1,:,end]
-#     epsilon_y2 = epsilon_y_hist[iload,2,:,end]
-#     epsilon_y3 = epsilon_y_hist[iload,3,:,end]
-#     epsilon_y4 = epsilon_y_hist[iload,4,:,end]
-#
-#     epsilon_z1 = epsilon_z_hist[iload,1,:,end]
-#     epsilon_z2 = epsilon_z_hist[iload,2,:,end]
-#     epsilon_z3 = epsilon_z_hist[iload,3,:,end]
-#     epsilon_z4 = epsilon_z_hist[iload,4,:,end]
-#
-#     kappa_x1 = kappa_x_hist[iload,1,:,end]
-#     kappa_x2 = kappa_x_hist[iload,2,:,end]
-#     kappa_x3 = kappa_x_hist[iload,3,:,end]
-#     kappa_x4 = kappa_x_hist[iload,4,:,end]
-#
-#     kappa_y1 = kappa_y_hist[iload,1,:,end]
-#     kappa_y2 = kappa_y_hist[iload,2,:,end]
-#     kappa_y3 = kappa_y_hist[iload,3,:,end]
-#     kappa_y4 = kappa_y_hist[iload,4,:,end]
-#
-#     kappa_z1 = kappa_z_hist[iload,1,:,end]
-#     kappa_z2 = kappa_z_hist[iload,2,:,end]
-#     kappa_z3 = kappa_z_hist[iload,3,:,end]
-#     kappa_z4 = kappa_z_hist[iload,4,:,end]
-#
-#
-#     PyPlot.figure()
-#     PyPlot.title("Load: $(P[iload]) N")
-#     PyPlot.plot(Lpt,strainAnalytical[iload,:],"k",label="Analytical")
-#     PyPlot.plot((pointvec[1:end-1,1]+pointvec[2:end,1])./2,-straintopGX[iload,:],color=plot_cycle[2],label="GXBeam")
-#     PyPlot.plot((pointvec[1:end-1,1]+pointvec[2:end,1])./2,-kappa_y1*h/2,"-",color=plot_cycle[1],label="OWENS1")
-#     PyPlot.legend()
-#     PyPlot.xlabel("y-position (m)")
-#     PyPlot.ylabel("bending strain top of beam")
-#
-#     PyPlot.figure()
-#     PyPlot.title("Load: $(P[iload]) N")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_x1,"-",color=plot_cycle[1],label="OWENS1")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_x2,"-",color=plot_cycle[2],label="OWENS2")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_x3,"-",color=plot_cycle[3],label="OWENS3")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_x4,"-",color=plot_cycle[4],label="OWENS4")
-#     PyPlot.plot(LinRange(0,1,length(strainGX[1,iload,:])),strainGX[1,iload,:],"-",color=plot_cycle[5],label="GXBeam")
-#     PyPlot.legend()
-#     PyPlot.xlabel("y-position (m)")
-#     PyPlot.ylabel("strain epsilon_x")
-#
-#     PyPlot.figure()
-#     PyPlot.title("Load: $(P[iload]) N")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_y1,"-",color=plot_cycle[1],label="OWENS1")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_y2,"-",color=plot_cycle[2],label="OWENS2")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_y3,"-",color=plot_cycle[3],label="OWENS3")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_y4,"-",color=plot_cycle[4],label="OWENS4")
-#     meaneps_y = (epsilon_y1.+epsilon_y2.+epsilon_y3.+epsilon_y4).*0.34785484513745385
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),meaneps_y,"-",color=plot_cycle[4],label="MeanOWENS4")
-#     PyPlot.plot(LinRange(0,1,length(strainGX[1,iload,:])),strainGX[2,iload,:],"-",color=plot_cycle[5],label="GXBeam")
-#     PyPlot.legend()
-#     PyPlot.xlabel("y-position (m)")
-#     PyPlot.ylabel("strain epsilon_y")
-#
-#     PyPlot.figure()
-#     PyPlot.title("Load: $(P[iload]) N")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_z1,"-",color=plot_cycle[1],label="OWENS1")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_z2,"-",color=plot_cycle[2],label="OWENS2")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_z3,"-",color=plot_cycle[3],label="OWENS3")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_z4,"-",color=plot_cycle[4],label="OWENS4")
-#     meaneps_z = (epsilon_z1.+epsilon_z2.+epsilon_z3.+epsilon_z4).*0.34785484513745385
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),meaneps_z,"-",color=plot_cycle[4],label="MeanOWENS4")
-#     PyPlot.plot(LinRange(0,1,length(strainGX[1,iload,:])),strainGX[3,iload,:],"-",color=plot_cycle[5],label="GXBeam")
-#     PyPlot.legend()
-#     PyPlot.xlabel("y-position (m)")
-#     PyPlot.ylabel("strain epsilon_z")
-#
-#     PyPlot.figure()
-#     PyPlot.title("Load: $(P[iload]) N")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_x1,"-",color=plot_cycle[1],label="OWENS1")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_x2,"-",color=plot_cycle[2],label="OWENS2")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_x3,"-",color=plot_cycle[3],label="OWENS3")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_x4,"-",color=plot_cycle[4],label="OWENS4")
-#     PyPlot.plot(LinRange(0,1,length(strainGX[1,iload,:])),curvGX[1,iload,:],"-",color=plot_cycle[5],label="GXBeam")
-#     PyPlot.legend()
-#     PyPlot.xlabel("y-position (m)")
-#     PyPlot.ylabel("strain kappa_x")
-#
-#     PyPlot.figure()
-#     PyPlot.title("Load: $(P[iload]) N")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_y1,"-",color=plot_cycle[1],label="OWENS1")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_y2,"-",color=plot_cycle[2],label="OWENS2")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_y3,"-",color=plot_cycle[3],label="OWENS3")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_y4,"-",color=plot_cycle[4],label="OWENS4")
-#     PyPlot.plot(LinRange(0,1,length(strainGX[1,iload,:])),curvGX[2,iload,:],"-",color=plot_cycle[5],label="GXBeam")
-#     PyPlot.legend()
-#     PyPlot.xlabel("y-position (m)")
-#     PyPlot.ylabel("strain kappa_y")
-#
-#     PyPlot.figure()
-#     PyPlot.title("Load: $(P[iload]) N")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_z1,"-",color=plot_cycle[1],label="OWENS1")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_z2,"-",color=plot_cycle[2],label="OWENS2")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_z3,"-",color=plot_cycle[3],label="OWENS3")
-#     PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_z4,"-",color=plot_cycle[4],label="OWENS4")
-#     PyPlot.plot(LinRange(0,1,length(strainGX[1,iload,:])),curvGX[3,iload,:],"-",color=plot_cycle[5],label="GXBeam")
-#     PyPlot.legend()
-#     PyPlot.xlabel("y-position (m)")
-#     PyPlot.ylabel("strain kappa_z")
+#     # # Strain
+#     # epsilon_x1 = epsilon_x_hist[iload,1,:,end]
+#     # epsilon_x2 = epsilon_x_hist[iload,2,:,end]
+#     # epsilon_x3 = epsilon_x_hist[iload,3,:,end]
+#     # epsilon_x4 = epsilon_x_hist[iload,4,:,end]
+#     #
+#     # epsilon_y1 = epsilon_y_hist[iload,1,:,end]
+#     # epsilon_y2 = epsilon_y_hist[iload,2,:,end]
+#     # epsilon_y3 = epsilon_y_hist[iload,3,:,end]
+#     # epsilon_y4 = epsilon_y_hist[iload,4,:,end]
+#     #
+#     # epsilon_z1 = epsilon_z_hist[iload,1,:,end]
+#     # epsilon_z2 = epsilon_z_hist[iload,2,:,end]
+#     # epsilon_z3 = epsilon_z_hist[iload,3,:,end]
+#     # epsilon_z4 = epsilon_z_hist[iload,4,:,end]
+#     #
+#     # kappa_x1 = kappa_x_hist[iload,1,:,end]
+#     # kappa_x2 = kappa_x_hist[iload,2,:,end]
+#     # kappa_x3 = kappa_x_hist[iload,3,:,end]
+#     # kappa_x4 = kappa_x_hist[iload,4,:,end]
+#     #
+#     # kappa_y1 = kappa_y_hist[iload,1,:,end]
+#     # kappa_y2 = kappa_y_hist[iload,2,:,end]
+#     # kappa_y3 = kappa_y_hist[iload,3,:,end]
+#     # kappa_y4 = kappa_y_hist[iload,4,:,end]
+#     #
+#     # kappa_z1 = kappa_z_hist[iload,1,:,end]
+#     # kappa_z2 = kappa_z_hist[iload,2,:,end]
+#     # kappa_z3 = kappa_z_hist[iload,3,:,end]
+#     # kappa_z4 = kappa_z_hist[iload,4,:,end]
+#     #
+#     #
+#     # PyPlot.figure()
+#     # PyPlot.title("Load: $(P[iload]) N")
+#     # PyPlot.plot(Lpt,strainAnalytical[iload,:],"k",label="Analytical")
+#     # PyPlot.plot((pointvec[1:end-1,1]+pointvec[2:end,1])./2,-straintopGX[iload,:],color=plot_cycle[2],label="GXBeam")
+#     # PyPlot.plot((pointvec[1:end-1,1]+pointvec[2:end,1])./2,-kappa_y1*h/2,"-",color=plot_cycle[1],label="OWENS1")
+#     # PyPlot.legend()
+#     # PyPlot.xlabel("y-position (m)")
+#     # PyPlot.ylabel("bending strain top of beam")
+#     #
+#     # PyPlot.figure()
+#     # PyPlot.title("Load: $(P[iload]) N")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_x1,"-",color=plot_cycle[1],label="OWENS1")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_x2,"-",color=plot_cycle[2],label="OWENS2")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_x3,"-",color=plot_cycle[3],label="OWENS3")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_x4,"-",color=plot_cycle[4],label="OWENS4")
+#     # PyPlot.plot(LinRange(0,1,length(strainGX[1,iload,:])),strainGX[1,iload,:],"-",color=plot_cycle[5],label="GXBeam")
+#     # PyPlot.legend()
+#     # PyPlot.xlabel("y-position (m)")
+#     # PyPlot.ylabel("strain epsilon_x")
+#     #
+#     # PyPlot.figure()
+#     # PyPlot.title("Load: $(P[iload]) N")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_y1,"-",color=plot_cycle[1],label="OWENS1")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_y2,"-",color=plot_cycle[2],label="OWENS2")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_y3,"-",color=plot_cycle[3],label="OWENS3")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_y4,"-",color=plot_cycle[4],label="OWENS4")
+#     # meaneps_y = (epsilon_y1.+epsilon_y2.+epsilon_y3.+epsilon_y4).*0.34785484513745385
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),meaneps_y,"-",color=plot_cycle[4],label="MeanOWENS4")
+#     # PyPlot.plot(LinRange(0,1,length(strainGX[1,iload,:])),strainGX[2,iload,:],"-",color=plot_cycle[5],label="GXBeam")
+#     # PyPlot.legend()
+#     # PyPlot.xlabel("y-position (m)")
+#     # PyPlot.ylabel("strain epsilon_y")
+#     #
+#     # PyPlot.figure()
+#     # PyPlot.title("Load: $(P[iload]) N")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_z1,"-",color=plot_cycle[1],label="OWENS1")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_z2,"-",color=plot_cycle[2],label="OWENS2")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_z3,"-",color=plot_cycle[3],label="OWENS3")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),epsilon_z4,"-",color=plot_cycle[4],label="OWENS4")
+#     # meaneps_z = (epsilon_z1.+epsilon_z2.+epsilon_z3.+epsilon_z4).*0.34785484513745385
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),meaneps_z,"-",color=plot_cycle[4],label="MeanOWENS4")
+#     # PyPlot.plot(LinRange(0,1,length(strainGX[1,iload,:])),strainGX[3,iload,:],"-",color=plot_cycle[5],label="GXBeam")
+#     # PyPlot.legend()
+#     # PyPlot.xlabel("y-position (m)")
+#     # PyPlot.ylabel("strain epsilon_z")
+#     #
+#     # PyPlot.figure()
+#     # PyPlot.title("Load: $(P[iload]) N")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_x1,"-",color=plot_cycle[1],label="OWENS1")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_x2,"-",color=plot_cycle[2],label="OWENS2")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_x3,"-",color=plot_cycle[3],label="OWENS3")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_x4,"-",color=plot_cycle[4],label="OWENS4")
+#     # PyPlot.plot(LinRange(0,1,length(strainGX[1,iload,:])),curvGX[1,iload,:],"-",color=plot_cycle[5],label="GXBeam")
+#     # PyPlot.legend()
+#     # PyPlot.xlabel("y-position (m)")
+#     # PyPlot.ylabel("strain kappa_x")
+#     #
+#     # PyPlot.figure()
+#     # PyPlot.title("Load: $(P[iload]) N")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_y1,"-",color=plot_cycle[1],label="OWENS1")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_y2,"-",color=plot_cycle[2],label="OWENS2")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_y3,"-",color=plot_cycle[3],label="OWENS3")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_y4,"-",color=plot_cycle[4],label="OWENS4")
+#     # PyPlot.plot(LinRange(0,1,length(strainGX[1,iload,:])),curvGX[2,iload,:],"-",color=plot_cycle[5],label="GXBeam")
+#     # PyPlot.legend()
+#     # PyPlot.xlabel("y-position (m)")
+#     # PyPlot.ylabel("strain kappa_y")
+#     #
+#     # PyPlot.figure()
+#     # PyPlot.title("Load: $(P[iload]) N")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_z1,"-",color=plot_cycle[1],label="OWENS1")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_z2,"-",color=plot_cycle[2],label="OWENS2")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_z3,"-",color=plot_cycle[3],label="OWENS3")
+#     # PyPlot.plot(LinRange(0,1,length(kappa_z1)),kappa_z4,"-",color=plot_cycle[4],label="OWENS4")
+#     # PyPlot.plot(LinRange(0,1,length(strainGX[1,iload,:])),curvGX[3,iload,:],"-",color=plot_cycle[5],label="GXBeam")
+#     # PyPlot.legend()
+#     # PyPlot.xlabel("y-position (m)")
+#     # PyPlot.ylabel("strain kappa_z")
 # end
 #
 # PyPlot.figure()

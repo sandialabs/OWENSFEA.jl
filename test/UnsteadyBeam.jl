@@ -43,7 +43,8 @@ stiffness = fill(Diagonal([2.389e9,4.334e8,2.743e7,2.167e7,1.970e7,4.406e8]), ne
 mass = fill(Diagonal([258.053,258.053,258.053,48.59,2.172,46.418]), nelem)
 
 # create assembly of interconnected nonlinear beams
-assembly = Assembly(points, start, stop; stiffness=stiffness, mass=mass)
+damping = fill([0.005,0.005,0.005,0.005,0.005,0.005], nelem)
+assembly = Assembly(points, start, stop; stiffness=stiffness, mass=mass,damping)
 
 # simulation time
 dt = 0.001
@@ -78,8 +79,6 @@ function runOWENS()
     angleD = 0.0, # angle of second section of beam relative to first (0 is straight)
     zeroOffset = 0.0,
     vertical = true)#r_b1[1]) #offset from 0 before first beam begins
-
-    ort.Twist_d .= 180.0 #enforce flatwise orientation
 
     # Create Sectional Properties
     sectionPropsArray = Array{GyricFEA.SectionPropsArray, 1}(undef, length(mesh.z)-1)
@@ -140,6 +139,8 @@ function runOWENS()
     maxIterations = 500,
     maxNumLoadSteps = 20,
     gravityOn = false,
+    RayleighAlpha = 0.005,
+    RayleighBeta = 0.005,
     iterationType="NR",
     aeroElasticOn=false)
 
@@ -260,6 +261,25 @@ timestart = time()
 Fn_beam,Ft_beam,Fz_beam,M25_beam,Mcurv_beam,Msweep_beam,Ux_beam,Uy_beam,Uz_beam,Θ25_beam,Θcurv_beam,Θsweep_beam = runOWENS()
 elapsedOW = time() - timestart
 
+#Analytical
+
+rhoA = mass[1][1,1]
+EIyy = stiffness[1][5,5]
+c = sqrt(EIyy/(rhoA)) #for a beam
+
+Nmodes = 3
+k = [1.875, 4.694, 7.855]
+W = zeros(Nmodes)
+freqAnalytical = zeros(Nmodes)
+for n = 1:Nmodes
+    W[n] = (2*n+1)*pi*c/(2*L) # analytical natural frequency
+    freqAnalytical[n] = sqrt(EIyy/(rhoA))/(2*pi)*(k[n]/L)^2
+end
+
+
+Wn = 20.0 #TODO?
+A_analy = 4*1e5/(0.14*L) * sqrt(Wn) / (rhoA / EIyy)^0.25
+
 ########################################
 # Plot
 ########################################
@@ -292,7 +312,7 @@ ylabel = ["\$u_x\$ (\$m\$)", "\$u_y\$ (\$m\$)", "\$u_z\$ (\$m\$)",
 
 for i = 7:12
     # i = 7
-    # PyPlot.figure()
+    # PyPlot.figure(i)
     y = [getproperty(state.points[point[i]], field[i])[direction[i]] for state in history]
 
     if field[i] == :theta
@@ -309,22 +329,25 @@ for i = 7:12
     # PyPlot.plot(t, y, color = plot_cycle[2], label = "GXBeam")
     if i == 7
         # PyPlot.plot(t,-Fn_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# N")
-        # PyPlot.ylim([-7e6,7e6])
+        PyPlot.ylim([-7e6,7e6])
         myerror = sum(abs.(-Fn_beam[1:end-1]-y))./sum(abs.(y))
+        @test myerror < 0.9
     elseif i == 8
         # PyPlot.plot(t,Fz_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# Z")
         myerror = sum(abs.(-Fn_beam[1:end-1]-y))./sum(abs.(y))
     elseif i == 9
         # PyPlot.plot(t,Ft_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# T")
-        # PyPlot.ylim([-3e6,3e6])
+        PyPlot.ylim([-3e6,3e6])
         myerror = sum(abs.(-Fn_beam[1:end-1]-y))./sum(abs.(y))
+        @test myerror < 3.3
     elseif i == 10
         # PyPlot.plot(t,Mcurv_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# Mcurv")
         myerror = sum(abs.(-Fn_beam[1:end-1]-y))./sum(abs.(y))
     elseif i == 11
         # PyPlot.plot(t,M25_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# M25")
-        # PyPlot.ylim([-4e6,4e6])
+        PyPlot.ylim([-4e6,4e6])
         myerror = sum(abs.(-Fn_beam[1:end-1]-y))./sum(abs.(y))
+        @test myerror < 1.5
     elseif i == 12
         # PyPlot.plot(t,Msweep_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# Msweep")
         myerror = sum(abs.(-Fn_beam[1:end-1]-y))./sum(abs.(y))
@@ -335,9 +358,5 @@ for i = 7:12
     # PyPlot.ylabel(ylabel[i])
     # PyPlot.legend()
     # PyPlot.savefig("./Unsteady$(ylabel[i]).pdf",transparent = true)
-
-    if i == 7 || i == 9 || i == 11 # the nonzero fx fz my
-        @test myerror < 3.3
-    end
 
 end

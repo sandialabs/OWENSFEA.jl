@@ -1334,15 +1334,15 @@ function calculateTimoshenkoElementStrain(elementOrder,nlOn,xloc,sectionProps,sw
         # p_disp_x[i,:] = [uprime, vprime, wprime, theta_x_prime, theta_y_prime, theta_z_prime]
 
         if nlOn
-            epsilon_x[i] = uprime + 0.5*(wprime^2 + vprime^2)
+            epsilon_x[i] = uprime + 0.5*(wprime^2 + vprime^2) #e_xx_0
         else
             epsilon_x[i] = uprime
         end
-        epsilon_y[i] = -theta_z_gp + vprime
-        epsilon_z[i] =  theta_y_gp + wprime
-        kappa_x[i] =  theta_x_prime
-        kappa_y[i] = theta_y_prime
-        kappa_z[i] = -theta_z_prime
+        epsilon_y[i] = -theta_z_gp + vprime #g_xy_0
+        epsilon_z[i] =  theta_y_gp + wprime #g_xz_0
+        kappa_x[i] =  theta_x_prime #g_xz_y
+        kappa_y[i] = theta_y_prime #e_xx_z
+        kappa_z[i] = -theta_z_prime #e_xx_y
     end #END OF INTEGRATION LOOP
 
     return ElStrain(epsilon_x,epsilon_y,epsilon_z,kappa_x,kappa_y,kappa_z)
