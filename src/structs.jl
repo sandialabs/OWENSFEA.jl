@@ -472,7 +472,7 @@ mutable struct BC_struct
 end
 
 """
-    SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset)
+    SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,xaf,yaf)
 
 Struct with element sectional properties, each component is a 1x2 array with distributed properties
 
@@ -501,6 +501,8 @@ Struct with element sectional properties, each component is a 1x2 array with dis
 * `b::Array{<:float}`: used in flutter approximation, possibly a chord or thickness value
 * `a0::Array{<:float}`: zero lift angle of attack, used in flutter approximation
 * `aeroCenterOffset::Array{<:float}`: doesn't appear to be used
+* `xaf::Array{<:float}`: x airfoil coordinates (to scale)
+* `yaf::Array{<:float}`: y airfoil coordinates (to scale)
 
 # Outputs:
 * `none`:
@@ -531,7 +533,10 @@ mutable struct SectionPropsArray
     b
     a0
     aeroCenterOffset
+    xaf
+    yaf
 end
+SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset) = SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,nothing,nothing) #convenience function
 
 """
 Internal, see ?Ort and ?SectionPropsArray

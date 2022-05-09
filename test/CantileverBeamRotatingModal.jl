@@ -66,7 +66,7 @@ assembly = Assembly(points, start, stop;
     lengths = lengths,
     midpoints = xm)
 
-system = System(assembly,false)
+system = System(assembly)
 # create dictionary of prescribed conditions
 prescribed_conditions = Dict(
 # fixed left side

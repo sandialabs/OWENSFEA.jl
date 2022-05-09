@@ -44,7 +44,7 @@ mass = fill(Diagonal([258.053,258.053,258.053,48.59,2.172,46.418]), nelem)
 
 # create assembly of interconnected nonlinear beams
 damping = fill([0.005,0.005,0.005,0.005,0.005,0.005], nelem)
-assembly = Assembly(points, start, stop; stiffness=stiffness, mass=mass,damping)
+assembly = Assembly(points, start, stop; stiffness=stiffness, mass=mass, damping)
 
 # simulation time
 dt = 0.001
@@ -329,7 +329,7 @@ for i = 7:12
     # PyPlot.plot(t, y, color = plot_cycle[2], label = "GXBeam")
     if i == 7
         # PyPlot.plot(t,-Fn_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# N")
-        PyPlot.ylim([-7e6,7e6])
+        # PyPlot.ylim([-7e6,7e6])
         myerror = sum(abs.(-Fn_beam[1:end-1]-y))./sum(abs.(y))
         @test myerror < 0.9
     elseif i == 8
@@ -337,7 +337,7 @@ for i = 7:12
         myerror = sum(abs.(-Fn_beam[1:end-1]-y))./sum(abs.(y))
     elseif i == 9
         # PyPlot.plot(t,Ft_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# T")
-        PyPlot.ylim([-3e6,3e6])
+        # PyPlot.ylim([-3e6,3e6])
         myerror = sum(abs.(-Fn_beam[1:end-1]-y))./sum(abs.(y))
         @test myerror < 3.3
     elseif i == 10
@@ -345,7 +345,7 @@ for i = 7:12
         myerror = sum(abs.(-Fn_beam[1:end-1]-y))./sum(abs.(y))
     elseif i == 11
         # PyPlot.plot(t,M25_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# M25")
-        PyPlot.ylim([-4e6,4e6])
+        # PyPlot.ylim([-4e6,4e6])
         myerror = sum(abs.(-Fn_beam[1:end-1]-y))./sum(abs.(y))
         @test myerror < 1.5
     elseif i == 12
