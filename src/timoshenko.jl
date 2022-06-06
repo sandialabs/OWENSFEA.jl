@@ -889,7 +889,7 @@ function calculateTimoshenkoElementNL(input,elStorage)
     S13 = elStorage.S13.*O1*O3
     S15 = elStorage.S15.*(O2^2+O3^2)
     S16 = elStorage.S16.*(O2^2+O3^2)
-    S22 = elStorage.S22.*(O1^2 + O3^2)
+    S22 = elStorage.S22.*(O1^2*0 + O3^2*0) #TODO: Why is this specific portion is causing increased nonphysical torque?
     S23 = elStorage.S23.*O2*O3
     S25 = elStorage.S25.*(O1*O2)
     S26 = elStorage.S26.*(O1*O2)

@@ -1822,7 +1822,7 @@ function readNodalTerms(;filename="none",data=[1 "M6" 1 1 0.0])
         #TODO: implement the 6x6 terms since they will be necessary for the linearized platform since there is strong cross coupling
         concLoad = Array{ConcNDL, 1}(undef, n_F)
         for i_F = 1:n_F
-            if concFnodeNum[i_F] == concFdof2[i_F]
+            if concFdof1[i_F] == concFdof2[i_F]
                 concLoad[i_F]= ConcNDL(concFnodeNum[i_F], concFdof1[i_F], concFval[i_F])
             end
         end
