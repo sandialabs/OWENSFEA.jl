@@ -97,18 +97,24 @@ function  linearAnalysisModal(feamodel,mesh,el,displ,Omega,elStorage;returnDynMa
     # eigVec,eigVal = eigSolve(MgTotal,CgTotal,KgTotal)#,... #eigensolve of global system
     if returnDynMatrices==true
         #save them to a file
+        KgTotalU,_ = applyBC(Kg,zeros(length(Kg[:,1])),feamodel.BC,numDOFPerNode)
+        MgTotalU,_ = applyBC(Mg,zeros(length(Mg[:,1])),feamodel.BC,numDOFPerNode)
+        CgTotalU,_ = applyBC(Cg,zeros(length(Cg[:,1])),feamodel.BC,numDOFPerNode)
+
         filename = "./linearized_matrices.mat"
         println("Saving linearized matrices to: $filename")
         file = MAT.matopen(filename,"w")
         MAT.write(file,"Kg_all",Kg_all)
         MAT.write(file,"Mg_all",Mg_all)
         MAT.write(file,"Cg_all",Cg_all)
-        MAT.write(file,"Kg",Kg)
-        MAT.write(file,"Mg",Mg)
-        MAT.write(file,"Cg",Cg)
-        MAT.write(file,"KgTotal",KgTotal)
-        MAT.write(file,"MgTotal",MgTotal)
-        MAT.write(file,"CgTotal",CgTotal)
+        MAT.write(file,"KgTotalU",KgTotalU)
+        MAT.write(file,"MgTotalU",MgTotalU)
+        MAT.write(file,"CgTotalU",CgTotalU)
+        MAT.write(file,"KgTotalM",KgTotal)
+        MAT.write(file,"MgTotalM",MgTotal)
+        MAT.write(file,"CgTotalM",CgTotal)
+        MAT.write(file,"jointTransform",feamodel.jointTransform)
+        MAT.write(file,"BC",feamodel.BC)
         MAT.write(file,"mesh",mesh)
         close(file)
     end

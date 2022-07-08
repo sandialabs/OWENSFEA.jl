@@ -116,7 +116,7 @@ function createTda(jointType,slaveNodeNum,masterNodeNum,psi,theta,joint)
         #determine local active DOFs associated with slave node
         slaveActiveDof1 = determineActiveDofsFromSlaveNode(slaveDof1,6)
 
-        Rda1 = -[1.0*LinearAlgebra.I(3), zeros(3,6)] #from constraint equation for pinned joint
+        Rda1 = -[1.0*LinearAlgebra.I(3);; zeros(3,6)] #from constraint equation for pinned joint
         Rdd1 = 1.0*LinearAlgebra.I(3)
 
         Tda,dDOF,aDOF = getNodeMaps(Rdd1,Rda1,masterNodeNum,slaveNodeNum,slaveDof1,activeDof1,slaveActiveDof1)
@@ -145,21 +145,24 @@ function createTda(jointType,slaveNodeNum,masterNodeNum,psi,theta,joint)
             globalConstraintEqMatrix2 = localConstraintEqMatrix2*Lambda
         end
         #extract Rda from globalConstraintEqMatrix2
-        Rda2 = zeros(length(globalConstraintEqMatrix2[:,1]),length(activeDof2))
+        Rda2 = zeros(length(globalConstraintEqMatrix2[:,1]),length(activeDof2)+length(slaveActiveDof2))
+        index = 1
         for i=1:length(activeDof2)
             ind = activeDof2[i]
-            Rda2[:,i] = globalConstraintEqMatrix2[:,ind]
+            Rda2[:,index] = globalConstraintEqMatrix2[:,ind]
+            index += 1
         end
 
         for i=1:length(slaveActiveDof2)
-            ind = slaveActiveDof2[i]+6
-            Rda2[:,i] = globalConstraintEqMatrix2[:,ind]
+            ind = Int(slaveActiveDof2[i]+6)
+            Rda2[:,index] = globalConstraintEqMatrix2[:,ind]
+            index += 1
         end
 
         #extract Rdd from globalConstraintEqMatrix2
         Rdd2 = zeros(length(globalConstraintEqMatrix2[:,1]),length(slaveDof2))
         for i=1:length(slaveDof2)
-            ind = slaveDof2[i]+6
+            ind = Int(slaveDof2[i]+6)
             Rdd2[:,i] = globalConstraintEqMatrix2[:,ind]
         end
 
@@ -203,15 +206,18 @@ function createTda(jointType,slaveNodeNum,masterNodeNum,psi,theta,joint)
         end
 
         #extract Rda from globalConstraintEqMatrix3
-        Rda3 = zeros(length(globalConstraintEqMatrix3[:,1]),length(activeDof3))
+        Rda3 = zeros(length(globalConstraintEqMatrix3[:,1]),length(activeDof3)+length(slaveActiveDof3))
+        index = 1
         for i=1:length(activeDof3)
             ind = activeDof3[i]
-            Rda3[:,i] = globalConstraintEqMatrix3[:,ind]
+            Rda3[:,index] = globalConstraintEqMatrix3[:,ind]
+            index += 1
         end
 
         for i=1:length(slaveActiveDof3)
             ind = slaveActiveDof3[i]+6
-            Rda3[:,i] = globalConstraintEqMatrix3[:,ind]
+            Rda3[:,index] = globalConstraintEqMatrix3[:,ind]
+            index += 1
         end
 
         #extract Rdd from globalConstraintEqMatrix3
@@ -236,15 +242,18 @@ function createTda(jointType,slaveNodeNum,masterNodeNum,psi,theta,joint)
         globalConstraintEqMatrix4 = localConstraintEqMatrix4*Lambda
 
         #extract Rda from globalConstraintEqMatrix4
-        Rda4 = zeros(length(globalConstraintEqMatrix4[:,1]),length(activeDof4))
+        Rda4 = zeros(length(globalConstraintEqMatrix4[:,1]),length(activeDof4)+length(slaveActiveDof4))
+        index = 1
         for i=1:length(activeDof4)
             ind = activeDof4[i]
-            Rda4[:,i] = globalConstraintEqMatrix4[:,ind]
+            Rda4[:,index] = globalConstraintEqMatrix4[:,ind]
+            index += 1
         end
 
         for i=1:length(slaveActiveDof4)
             ind = slaveActiveDof4[i]+6
-            Rda4[:,i] = globalConstraintEqMatrix4[:,ind]
+            Rda4[:,index] = globalConstraintEqMatrix4[:,ind]
+            index += 1
         end
 
         #extract Rdd from globalConstraintEqMatrix4
@@ -325,7 +334,7 @@ Internal, determines the local master DOF associated with a local slave DOF.
 """
 function determineActiveDofsFromSlaveNode(slaveDof,numDofPerNode)
     # Get size
-    count = 1;
+    count = 0
     for i=1:numDofPerNode #loop over number of DOF per node
         if !in(i,slaveDof) #if i is not in slaveDof list add it to a list of local active DOFs associated with a slave node
             #         slaveNodeActiveDof(count) = i;
@@ -334,14 +343,13 @@ function determineActiveDofsFromSlaveNode(slaveDof,numDofPerNode)
         end
     end
 
-    if count>1
-        count = 1
+    if count>0
         slaveNodeActiveDof = zeros(count)
+        count = 0
         for i=1:numDofPerNode #loop over number of DOF per node
             if !in(i,slaveDof) #if i is not in slaveDof list add it to a list of local active DOFs associated with a slave node
-                slaveNodeActiveDof[count] = i
                 count = count + 1
-
+                slaveNodeActiveDof[count] = i
             end
         end
     else
@@ -475,7 +483,7 @@ end
 
    createJointTransform(joint,numNodes,numDofPerNode)
 
-Internal, calculates the eigenvalues and vectors of a structural dynamic system.
+Internal, calculates the JointTransform of a structural system.
 
 #Input
 * `joint`:         object containing joint data

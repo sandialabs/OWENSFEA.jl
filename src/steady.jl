@@ -194,7 +194,7 @@ function updateLoadStep(iterationCount,loadStepParams,loadStep,loadStepPrev,load
             else
                 staticAnalysisComplete = false
                 loadStepPrev = loadStep
-                loadStep = loadStepParams.prescribedLoadStep(loadStepCount)
+                loadStep = loadStepParams.prescribedLoadStep[loadStepCount]
                 println("Prescribed load step: $loadStep")
             end
         else
