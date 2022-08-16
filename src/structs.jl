@@ -89,6 +89,7 @@ Model inputs for FEA analysis, struct
 * `minLoadStepDelta`: used in static (steady state) analysis
 * `minLoadStep`: used in static (steady state) analysis
 * `prescribedLoadStep`: used in static (steady state) analysis
+* `predef::Bool`: will update the elStorage array if passed into Unsteady() with the nonlinear strain stiffening, to be used for subsequent analyses
 
 # Outputs:
 * `none`:
@@ -123,7 +124,8 @@ function FEAModel(;analysisType = "TNB",
     maxNumLoadSteps = 20,
     minLoadStepDelta = 0.0500,
     minLoadStep = 0.0500,
-    prescribedLoadStep = 0.0)
+    prescribedLoadStep = 0.0,
+    predef = false)
 
     if jointTransform==0.0
         jointTransform, reducedDOFList = GyricFEA.createJointTransform(joint,numNodes,numDofPerNode) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
@@ -146,7 +148,7 @@ function FEAModel(;analysisType = "TNB",
 
     if nlParams==0
         nlParams = NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
-        maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
+        maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep,predef)
     end
 
     return FEAModel(analysisType,initCond,aeroElasticOn,guessFreq,airDensity,
@@ -168,7 +170,13 @@ mutable struct NlParams
     minLoadStepDelta
     minLoadStep
     prescribedLoadStep
+    predef
 end
+#Convenience function
+NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,maxIterations,maxNumLoadSteps,
+minLoadStepDelta,minLoadStep,prescribedLoadStep) = NlParams(iterationType,
+adaptiveLoadSteppingFlag,tolerance,maxIterations,maxNumLoadSteps,minLoadStepDelta,
+minLoadStep,prescribedLoadStep,false)
 
 """
 Internal, Timoshenko element matrices
@@ -252,6 +260,13 @@ mutable struct ElStorage
       mel
       moiel
       xmel
+      K21NLpredef
+      K12NLpredef
+      K31NLpredef
+      K13NLpredef
+      K22NLpredef
+      K23NLpredef
+      K33NLpredef
 end
 
 """

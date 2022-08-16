@@ -5,7 +5,7 @@ function TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,dispData,Omega,elStorage;
     eldispiter=zero(eldisp),rbData=zeros(9),CN2H=1.0*LinearAlgebra.I(3),delta_t=0.0,
     OmegaDot=0.0,displ_im1=zero(eldisp),displdot_im1=zero(eldisp),timeInt=nothing,
     displddot_im1=zero(eldisp),iterationCount=0,postprocess=false,elementNumber=1,
-    dispOld=nothing,loadStep = 1.0,loadStepPrev = 1.0)
+    dispOld=nothing,loadStep = 1.0,loadStepPrev = 1.0,predef=nothing)
 
     x = mesh.x
     y = mesh.y
@@ -235,7 +235,7 @@ function TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,dispData,Omega,elStorage;
         gravityOn,RayleighAlpha,RayleighBeta,accelVec,omegaVec,omegaDotVec,Omega,
         OmegaDot,CN2H,airDensity,freq,firstIteration)
 
-        elOutput = calculateTimoshenkoElementNL(elInput,elStorage[i]) #calculate timoshenko element
+        elOutput = calculateTimoshenkoElementNL(elInput,elStorage[i];predef) #calculate timoshenko element
         if postprocess
                  #post process for reaction force
                 FhatEl1PP = elOutput.Ke*eldispiter

@@ -1,11 +1,12 @@
 
 """
 
-  reducedOrderModel(feamodel,mesh,el,displ)
+  reducedOrderModel(elStorage,feamodel,mesh,el,displ)
 
 This function executes a reduced order model analysis.
 
 #Input
+* `elStorage`      object containing stored element matrices
 * `feamodel`          object containing feamodel information
 * `mesh`           object containing mesh information
 * `el`             object containing element information
@@ -13,11 +14,8 @@ This function executes a reduced order model analysis.
 
 #Output
 * `rom`            object containing a reduced order feamodel
-* `elStorage`      object containing stored element matrices
 """
-function reducedOrderModel(feamodel,mesh,el,displ)
-
-	elStorage = initialElementCalculations(feamodel,el,mesh) #performs initial element calculations
+function reducedOrderModel(elStorage,feamodel,mesh,el,displ)
 
 	rom0 = calculateROM(feamodel,mesh,el,displ,zeros(9),elStorage)  #Omega   = 0 #calculates system matrices for parked condition
 
@@ -93,7 +91,7 @@ function reducedOrderModel(feamodel,mesh,el,displ)
 
 	rom = ROM(Kr,Mr,Cr,0.0,Fr,Phi,invPhi,SrOx2,SrOy2,SrOz2,SrOxOy,SrOyOz,SrOxOz,FrOx2,FrOy2,FrOz2,FrOxOy,FrOyOz,FrOxOz,FrOxdot,FrOydot,FrOzdot,FrAx,FrAy,FrAz,GrOx,GrOy,GrOz,HrOx,HrOy,HrOz)
 
-	return rom,elStorage
+	return rom
 end
 
 """

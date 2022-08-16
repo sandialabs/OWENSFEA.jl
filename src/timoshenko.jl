@@ -359,102 +359,36 @@ function calculateTimoshenkoElementInitialRun(elementOrder,modalFlag,xloc,sectio
         elxm[3] = elxm[3] + concMass[1,1]*z[1] + concMass[1,2]*z[2]
     end
 
-    #store element mass properties
+    #store element properties
     return ElStorage(K11,     #Store structural stiffness "K" into elementStorage
-    K12,
-    K13,
-    K14,
-    K15,
-    K16,
-    K22,
-    K23,
-    K24,
-    K25,
-    K26,
-    K33,
-    K34,
-    K35,
-    K36,
-    K44,
-    K45,
-    K46,
-    K55,
-    K56,
-    K66,
+    K12,K13,K14,K15,K16,K22,K23,K24,K25,K26,K33,K34,K35,K36,K44,K45,K46,K55,K56,K66,
     M11, #Store structural stiffness "M" into elementStorage
-    M15,
-    M16,
-    M22,
-    M24,
-    M33,
-    M34,
-    M44,
-    M55,
-    M56,
-    M66,
+    M15,M16,M22,M24,M33,M34,M44,M55,M56,M66,
     0.5*S11, #Store spin softening coefficient "S" into element storage
-    S12,
-    S13,
-    0.5*S15,
-    0.5*S16,
-    0.5*S22,
-    S23,
-    S25,
-    S26,
-    0.5*S33,
-    S35,
-    S36,
-    0.5*S55,
-    0.5*S56,
-    0.5*S66,
-    S14_1,
-    S14_2,
-    S24_1,
-    S24_2,
-    S34_1,
-    S34_2,
-    S45_1,
-    S45_2,
-    S46_1,
-    S46_2,
-    S44_1,
-    S44_2,
-    S44_3,
+    S12,S13,0.5*S15,0.5*S16,0.5*S22,S23,S25,S26,0.5*S33,S35,S36,0.5*S55,0.5*S56,0.5*S66,S14_1,S14_2,S24_1,S24_2,S34_1,S34_2,S45_1,S45_2,S46_1,S46_2,S44_1,S44_2,S44_3,
     C12, #Store coriolis coefficient "C" into element sotrage
-    C13,
-    C23,
-    C24,
-    C25,
-    C26,
-    C34,
-    C35,
-    C36,
-    C14_1,
-    C14_2,
-    C45_1,
-    C45_2,
-    C46_1,
-    C46_2,
+    C13,C23,C24,C25,C26,C34,C35,C36,C14_1,C14_2,C45_1,C45_2,C46_1,C46_2,
     elementMass,
     elementMOI,
-    elxm)
+    elxm,zeros(2,2),zeros(2,2),zeros(2,2),zeros(2,2),zeros(2,2),zeros(2,2),zeros(2,2))
 end
 
 
 """
-    calculateTimoshenkoElementNL(input,elStorage)
+    calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
 
 Internal, performs nonlinear element calculations.
 
 #Inputs
 * `input::ElInput`: see ?ElInput
 * `elStorage::ElStorage`: see ?ElStorage
+* `predef::Bool`: optional, if true, mutates ElStorage to include the nonlinear strain stiffening
 
 #Outputs
 * `ElOutput`: see ?ElOutput
 
 """
-function calculateTimoshenkoElementNL(input,elStorage)
+function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
 
     ###-------- assign input block ----------------
     elementOrder   = input.elementOrder
@@ -853,6 +787,16 @@ function calculateTimoshenkoElementNL(input,elStorage)
     K56 = elStorage.K56
     K66 = elStorage.K66
 
+    if predef == "use"
+        K21 = elStorage.K21NLpredef
+        K12 = elStorage.K12NLpredef
+        K31 = elStorage.K31NLpredef
+        K13 = elStorage.K13NLpredef
+        K22 = elStorage.K22NLpredef
+        K23 = elStorage.K23NLpredef
+        K33 = elStorage.K33NLpredef
+    end
+
     if useDisp #modify stiffness matrices to account for nonlinear effects
         K21 = K12' + 2*K12NL'
         K12 = K12 + K12NL
@@ -861,10 +805,22 @@ function calculateTimoshenkoElementNL(input,elStorage)
         K22 = K22 + K22NL
         K23 = K23 + K23NL
         K33 = K33 + K33NL
-    else
+
+        if predef == "update"
+            elStorage.K21NLpredef = K21
+            elStorage.K12NLpredef = K12
+            elStorage.K31NLpredef = K31
+            elStorage.K13NLpredef = K13
+            elStorage.K22NLpredef = K22
+            elStorage.K23NLpredef = K23
+            elStorage.K33NLpredef = K33
+        end
+
+    elseif predef == nothing
         K21 = K12'
         K31 = K13'
     end
+
 
     # Only used if (useDisp)
     K12hat  = K12

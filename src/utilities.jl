@@ -297,7 +297,7 @@ function getNodeMaps(Rdd,Rda,masterNodeNum,slaveNodeNum,slaveDof,activeDof,slave
         error("Singular joint transformation matrix. Exiting")
     end
 
-    Tda = -Rdd\Rda #calculate Tda #TODO
+    Tda = -Rdd\Rda #calculate Tda
 
     numSlaveDOFs = length(slaveDof) #get number of joint DOFs for this joint
     numActiveDOFsFromMasterNode = length(activeDof) #get number of active DOFs for this joint
@@ -1199,13 +1199,13 @@ function applyBC(Kg,Fg,BC,numDofPerNode)
     if (BC.numpBC > 0)
         pBC = BC.pBC
         numpBC = size(pBC)[1]
-
+        eqidx = findall(x->x==-1,BC.map)
         for i=1:numpBC
-            nodeNumber = pBC[i,1]
-            dofNumber = pBC[i,2]
+            nodeNumber = Int(pBC[i,1])
+            dofNumber = Int(pBC[i,2])
             specVal = pBC[i,3]
 
-            eqNumber = (nodeNumber-1)*numDofPerNode + dofNumber
+            eqNumber = eqidx[i]#(nodeNumber-1)*numDofPerNode + dofNumber
 
             for j=1:numEq
                 Kg[eqNumber,j] = 0.0

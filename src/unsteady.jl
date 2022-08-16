@@ -79,7 +79,7 @@ performs unsteady structural dynamics analysis
 * `dispOut::DispOut`: see ?DispOut displacement data at end of time step
 * `FReaction_sp1::`: vector containing reaction force at turbine base at end of time step
 """
-function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,time,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData)
+function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,time,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData;predef=nothing)
 
     #-------- get feamodel information -----------
     conn = Int.(mesh.conn) #TODO: make the generator output ints
@@ -124,7 +124,7 @@ function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,t
         Fg = zero(Fg1)
         nodalTerms,timeInt = TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,
         dispData,Omega,elStorage;Kg,Fg,eldisp_sm1,eldispdot,eldispddot,eldispiter,rbData,CN2H,delta_t,
-        OmegaDot,displ_im1,displdot_im1,displddot_im1,iterationCount)
+        OmegaDot,displ_im1,displdot_im1,displddot_im1,iterationCount,predef)
 
         #apply general 6x6  mass, damping, and stiffness matrices to nodes
         # Except only stiffness is used here... #TODO: is this correct?  Shouldn't the cross coupling between say mass and force (from acceleration) be included with the cross terms?
