@@ -1367,8 +1367,8 @@ function findElementsAssociatedWithNodeNumber(nodeNum,conn,jointData)
                 end
             end
         end
-    else
-        error("empty jointData")
+    # else
+    #     error("empty jointData")
     end
 
 
@@ -1388,7 +1388,12 @@ end
 """
 Internal, applies 6x6 concentrated nodal terms
 """
-function applyGeneralConcentratedTerms(Kg,Mg,Cg,concStiff,concMass,concDamp)
+function applyConcentratedTerms(concStiff,concMass,concDamp,concLoad, numNodes, numDOFPerNode)
+
+    Kconc = zeros(numNodes*numDOFPerNode, numNodes*numDOFPerNode)
+    Mconc = zeros(numNodes*numDOFPerNode, numNodes*numDOFPerNode)
+    Cconc = zeros(numNodes*numDOFPerNode, numNodes*numDOFPerNode)
+    Fconc = zeros(numNodes*numDOFPerNode)
 
     if !isempty(concStiff)
         for i=1:length(concStiff)
@@ -1399,9 +1404,7 @@ function applyGeneralConcentratedTerms(Kg,Mg,Cg,concStiff,concMass,concDamp)
             gdof1 = (nodeNum-1)*6 + dof1
             gdof2 = (nodeNum-1)*6 + dof2
 
-            if dof1!=dof2 #If not the diagonal terms, those are handled elsewhere
-                Kg[gdof1,gdof2] = Kg[gdof1,gdof2] + val
-            end
+            Kconc[gdof1,gdof2] += val
 
         end
     end
@@ -1415,9 +1418,7 @@ function applyGeneralConcentratedTerms(Kg,Mg,Cg,concStiff,concMass,concDamp)
             gdof1 = (nodeNum-1)*6 + dof1
             gdof2 = (nodeNum-1)*6 + dof2
 
-            if dof1!=dof2 #If not the diagonal terms, those are handled elsewhere
-                Mg[gdof1,gdof2] = Mg[gdof1,gdof2] + val
-            end
+            Mconc[gdof1,gdof2] += val
         end
     end
 
@@ -1430,13 +1431,22 @@ function applyGeneralConcentratedTerms(Kg,Mg,Cg,concStiff,concMass,concDamp)
             gdof1 = (nodeNum-1)*6 + dof1
             gdof2 = (nodeNum-1)*6 + dof2
 
-            if dof1!=dof2 #If not the diagonal terms, those are handled elsewhere
-                Cg[gdof1,gdof2] = Cg[gdof1,gdof2] + val
-            end
+            Cconc[gdof1,gdof2] += val
         end
     end
 
-    return Kg,Mg,Cg
+    if !isempty(concLoad)
+        for i=1:length(concLoad)
+            nodeNum = concLoad[i].nodeNum
+            val = concLoad[i].val
+            dof = concLoad[i].dof
+            gdof = (nodeNum-1)*numDOFPerNode + dof
+
+            Fconc[gdof] += val
+        end
+    end
+
+    return Kconc, Mconc, Cconc, Fconc
 end
 
 """
