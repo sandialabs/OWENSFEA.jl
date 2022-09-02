@@ -5,7 +5,7 @@ function TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,dispData,Omega,elStorage;
     eldispiter=zero(eldisp),rbData=zeros(9),CN2H=1.0*LinearAlgebra.I(3),delta_t=0.0,
     OmegaDot=0.0,displ_im1=zero(eldisp),displdot_im1=zero(eldisp),timeInt=nothing,
     displddot_im1=zero(eldisp),iterationCount=0,postprocess=false,elementNumber=1,
-    dispOld=nothing,loadStep = 1.0,loadStepPrev = 1.0,predef=nothing)
+    dispOld=nothing,loadStep = 1.0,loadStepPrev = 1.0,predef=nothing,countedNodes = [])
 
     x = mesh.x
     y = mesh.y
@@ -31,7 +31,6 @@ function TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,dispData,Omega,elStorage;
     maxNumLoadSteps = nlParams.maxNumLoadSteps
     MAXIT = nlParams.maxIterations
     tolerance = nlParams.tolerance
-    nodalTerms = feamodel.nodalTerms
 
     #------- intitialization -----------------
     if analysisType=="TNB"
@@ -142,7 +141,6 @@ function TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,dispData,Omega,elStorage;
     ely=zeros(numNodesPerEl)
     elz=zeros(numNodesPerEl)
 
-    nodalTerms = deepcopy(feamodel.nodalTerms)
     #-------------------------------------------
 
     #---- element  calculation and assembly ----------------------------------
@@ -203,10 +201,13 @@ function TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,dispData,Omega,elStorage;
             end
         end
 
-        #get concentrated terms associated with elemetn
-        #TODO: verify that concentrated mass associated with elements doesn't get double counted for joints, if you just add concetrated terms to platform node, then it isn't a concern
-        concMass,concStiff,concLoad,feamodel.joint,nodalTerms.concMass,nodalTerms.concStiff,nodalTerms.concLoad = ConcMassAssociatedWithElement(conn[i,:],feamodel.joint,nodalTerms.concMass,nodalTerms.concStiff,nodalTerms.concLoad)
-
+        #get concentrated terms associated with elemet
+        concLoad
+        concStiff
+        concMass
+        concDamp
+        # concStiff, concMass, concDamp, concLoad = applyConcentratedTerms(feamodel.nodalTerms.concStiff, feamodel.nodalTerms.concMass, feamodel.nodalTerms.concDamp, feamodel.nodalTerms.concLoad, feamodel.joint, numNodes, numDOFPerNode)
+        concStiff, concMass, concDamp, concLoad, countedNodes = getElementConcTerms!(feamodel.nodalTerms.concStiff, feamodel.nodalTerms.concMass, feamodel.nodalTerms.concDamp, feamodel.nodalTerms.concLoad, conn[i,:], numDOFPerNode, countedNodes)
         if el.rotationalEffects[i]!=1
             Omega = 0.0
             OmegaDot = 0.0
@@ -231,7 +232,7 @@ function TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,dispData,Omega,elStorage;
         elInput = ElInput(elementOrder,modalFlag,timeInt,xloc,sectionProps,sweepAngle,
         coneAngle,rollAngle,aeroSweepAngle,iterationType,useDisp,preStress,aeroElasticOn,
         aeroForceOn,loadStepPrev,loadStep,maxNumLoadSteps,MAXIT,tolerance,analysisType,
-        eldisp,eldispdot,eldispddot,eldispiter,concMass,concStiff,concLoad,eldisp_sm1,elx,ely,elz,
+        eldisp,eldispdot,eldispddot,eldispiter,concMass,concStiff,concDamp,concLoad,eldisp_sm1,elx,ely,elz,
         gravityOn,RayleighAlpha,RayleighBeta,accelVec,omegaVec,omegaDotVec,Omega,
         OmegaDot,CN2H,airDensity,freq,firstIteration)
 

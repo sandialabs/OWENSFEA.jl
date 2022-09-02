@@ -17,7 +17,9 @@ This function executes a reduced order model analysis.
 """
 function reducedOrderModel(elStorage,feamodel,mesh,el,displ)
 
-	rom0 = calculateROM(feamodel,mesh,el,displ,zeros(9),elStorage)  #Omega   = 0 #calculates system matrices for parked condition
+	countedNodes = []
+
+	rom0 = calculateROM(feamodel,mesh,el,displ,zeros(9),elStorage,countedNodes)  #Omega   = 0 #calculates system matrices for parked condition
 
 	#calculates system matrices for various acceleration, rotor speed, rotor accelration combinations
 	omx = 1
@@ -32,18 +34,18 @@ function reducedOrderModel(elStorage,feamodel,mesh,el,displ)
 	a_y = 1
 	a_z = 1
 
-	rom1 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 omx 0.0 0.0 0.0 0.0 0.0],elStorage,rom0)  #Omega_x = 1 #OmegaDot_i = 0 accel _i = 0
-	rom2 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 omy 0.0 0.0 0.0 0.0],elStorage,rom0)  #Omega_y = 1 #OmegaDot_i = 0 accel_i = 0
-	rom3 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 0.0 omz 0.0 0.0 0.0],elStorage,rom0)  #Omega_z = 1 #OmegaDot_i = 0 accel_i = 0
-	rom4 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 omx omy 0.0 0.0 0.0 0.0],elStorage,rom0)  #Omega_x,y = 1 #OmegaDot_i = 0 accel_i = 0
-	rom5 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 omy omz 0.0 0.0 0.0],elStorage,rom0)  #Omega_y,z = 1 #OmegaDot_i = 0 accel_i = 0
-	rom6 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 omx 0.0 omz 0.0 0.0 0.0],elStorage,rom0)  #Omega_x,z = 1 #OmegaDot_i = 0 accel_i = 0
-	rom7 = calculateROMGyric(feamodel,mesh,el,displ,[a_x 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0],elStorage,rom0)  #Omega_i = 0 #OmegaDot_i = 0 accel_x = 1
-	rom8 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 a_y 0.0 0.0 0.0 0.0 0.0 0.0 0.0],elStorage,rom0)  #Omega_i = 0 #OmegaDot_i = 0 accel_y = 1
-	rom9 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 a_z 0.0 0.0 0.0 0.0 0.0 0.0],elStorage,rom0)  #Omega_i = 0 #OmegaDot_i = 0 accel_z = 1
-	rom10 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 0.0 0.0 omxdot 0.0 0.0],elStorage,rom0)  #Omega_i = 0 #OmegaDot_1 = 0 accel_i=0
-	rom11 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 0.0 0.0 0.0 omydot 0.0],elStorage,rom0)  #Omega_i = 0 #OmegaDot_2 = 0 accel_i=0
-	rom12 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 omzdot],elStorage,rom0)  #Omega_i = 0 #OmegaDot_3 = 0 accel_i=0
+	rom1 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 omx 0.0 0.0 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_x = 1 #OmegaDot_i = 0 accel _i = 0
+	rom2 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 omy 0.0 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_y = 1 #OmegaDot_i = 0 accel_i = 0
+	rom3 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 0.0 omz 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_z = 1 #OmegaDot_i = 0 accel_i = 0
+	rom4 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 omx omy 0.0 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_x,y = 1 #OmegaDot_i = 0 accel_i = 0
+	rom5 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 omy omz 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_y,z = 1 #OmegaDot_i = 0 accel_i = 0
+	rom6 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 omx 0.0 omz 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_x,z = 1 #OmegaDot_i = 0 accel_i = 0
+	rom7 = calculateROMGyric(feamodel,mesh,el,displ,[a_x 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_i = 0 #OmegaDot_i = 0 accel_x = 1
+	rom8 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 a_y 0.0 0.0 0.0 0.0 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_i = 0 #OmegaDot_i = 0 accel_y = 1
+	rom9 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 a_z 0.0 0.0 0.0 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_i = 0 #OmegaDot_i = 0 accel_z = 1
+	rom10 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 0.0 0.0 omxdot 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_i = 0 #OmegaDot_1 = 0 accel_i=0
+	rom11 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 0.0 0.0 0.0 omydot 0.0],elStorage,rom0,countedNodes)  #Omega_i = 0 #OmegaDot_2 = 0 accel_i=0
+	rom12 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 omzdot],elStorage,rom0,countedNodes)  #Omega_i = 0 #OmegaDot_3 = 0 accel_i=0
 
 	#reduced order structural stiffness, mass, and damping
 	Kr = rom0.Kr
@@ -96,7 +98,7 @@ end
 
 """
 
-	calculateROM(model,mesh,el,displ,omegaVec,omegaDotVec,elStorage)
+	calculateROM(model,mesh,el,displ,omegaVec,omegaDotVec,elStorage,countedNodes)
 
 This function calculates a reduced order model for a conventional
 structural dynamics system (parked, non-rotating)
@@ -108,11 +110,12 @@ structural dynamics system (parked, non-rotating)
 * `displ`        displacement vector
 * `rbData`:     vector containing rigid body displacement, velocity, and acceleration
 * `elStorage`    object containing stored element data
+* `countedNodes`    prevents applied nodal terms from double counting
 
 #Output
 * `rom`          object containing reduced order model data
 """
-function  calculateROM(feamodel,mesh,el,displ,rbData,elStorage)
+function  calculateROM(feamodel,mesh,el,displ,rbData,elStorage,countedNodes)
 	feamodel.analysisType = "ROM"
 	BC = feamodel.BC
 
@@ -127,7 +130,7 @@ function  calculateROM(feamodel,mesh,el,displ,rbData,elStorage)
 	Cg = zeros(totalNumDOF,totalNumDOF)
 	Fg = zeros(totalNumDOF)
 
-	TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,displ,0.0,elStorage; Kg,Mg,Cg,Fg,rbData)
+	TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,displ,0.0,elStorage; Kg,Mg,Cg,Fg,rbData,countedNodes)
 
 	#----------------------------------------------------------------------
 	#APPLY CONSTRAINT
@@ -260,6 +263,7 @@ function  structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega,OmegaDo
 	totalNumDOF = numNodes * numDOFPerNode
 	_,numReducedDOF = size(feamodel.jointTransform)
 	nodalTerms = feamodel.nodalTerms
+	countedNodes = []
 	###-----------------------------------------
 
 	###------- intitialization -----------------
@@ -350,6 +354,13 @@ function  structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega,OmegaDo
 		end
 		###------- end element calculation and assembly ------------------
 		##
+		#Apply concentrated stiffness, mass, damping
+		Fe[1:6] += concLoad[:,1]
+		Fe[7:12] += concLoad[:,2]
+
+		Ke[1:6,1:6] += concStiff[:,1:6]
+		Ke[7:12,7:12] += concStiff[:,7:12]
+		
 		#Apply external loads to structure
 		for i=1:length(Fexternal)
 			Fg[Fdof[i]] = Fg[Fdof[i]] + Fexternal[i]
@@ -463,7 +474,7 @@ function  structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega,OmegaDo
 	end
 	###------ calculate reaction at turbine base ----------------------------
 	reactionNodeNumber = feamodel.platformTurbineConnectionNodeNumber
-	FReaction_sp1 = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H)
+	FReaction_sp1 = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H,countedNodes)
 	###----------------------------------------------------------------------
 	#Calculate strain
 	elStrain = calculateStrainForElements(numEl,numNodesPerEl,numDOFPerNode,conn,elementOrder,el,displ_iter,feamodel.nlOn)
@@ -497,7 +508,7 @@ end
 
 """
 
-  calculateROMGyric(feamodel,mesh,el,displ,omegaVec,omegaDotVec,elStorage,rom0)
+  calculateROMGyric(feamodel,mesh,el,displ,omegaVec,omegaDotVec,elStorage,rom0,countedNodes)
 
 Calculates a reduced order feamodel with rotational/ rigid
 body motion effects
@@ -510,24 +521,25 @@ body motion effects
 * `rbData`:     vector of hub frame accel (1-3), angular velocity components (4-6), and angular accleration (7-9)
 * `elStorage`:    object containing stored element data
 * `rom0`:         object containing parked/conventional reduced order feamodel
+* `countedNodes`:    prevents applied nodal terms from double counting
 
 #Output
 * `rom`:          object containing reduced order feamodel data
 """
-function  calculateROMGyric(feamodel,mesh,el,displ,rbData,elStorage,rom0)
+function  calculateROMGyric(feamodel,mesh,el,displ,rbData,elStorage,rom0,countedNodes)
 	feamodel.analysisType = "ROM" #force analysis type to match function call
 
-	elementOrder = feamodel.elementOrder #HERE
-	numNodesPerEl = elementOrder + 1 #HERE
-	numDOFPerNode = 6 #HERE
-	totalNumDOF = mesh.numNodes * numDOFPerNode #HERE
-	Kg = zeros(totalNumDOF,totalNumDOF) #HERE
-	Cg = zeros(totalNumDOF,totalNumDOF) #HERE
-	Fg = zeros(totalNumDOF) #HERE
-	eldisp = zeros(numNodesPerEl*numDOFPerNode) #HERE
+	elementOrder = feamodel.elementOrder
+	numNodesPerEl = elementOrder + 1
+	numDOFPerNode = 6
+	totalNumDOF = mesh.numNodes * numDOFPerNode
+	Kg = zeros(totalNumDOF,totalNumDOF)
+	Cg = zeros(totalNumDOF,totalNumDOF)
+	Fg = zeros(totalNumDOF)
+	eldisp = zeros(numNodesPerEl*numDOFPerNode)
 
 	TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,displ,0.0,elStorage;
-	    Kg,Cg,Fg,rbData)
+	    Kg,Cg,Fg,rbData,countedNodes)
 
 	###----------------------------------------------------------------------
 	#APPLY CONSTRAINT

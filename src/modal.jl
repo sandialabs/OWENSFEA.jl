@@ -66,6 +66,7 @@ function  linearAnalysisModal(feamodel,mesh,el,displ,Omega,elStorage;returnDynMa
     numNodesPerEl = elementOrder + 1  #do initialization
     numDOFPerNode = 6
     totalNumDOF = mesh.numNodes * numDOFPerNode
+    countedNodes = []
 
     Kg = zeros(totalNumDOF,totalNumDOF)
     Mg = zeros(totalNumDOF,totalNumDOF)
@@ -73,7 +74,7 @@ function  linearAnalysisModal(feamodel,mesh,el,displ,Omega,elStorage;returnDynMa
     eldisp = zeros(numNodesPerEl*numDOFPerNode)
 
     nodalTerms,timeInt = TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,
-    displ,Omega,elStorage;Kg,Mg,Cg)
+    displ,Omega,elStorage;Kg,Mg,Cg,countedNodes)
 
     #apply general 6x6  mass, damping, and stiffness matrices to nodes
     Kg_all,Mg_all,Cg_all = applyGeneralConcentratedTerms(Kg,Mg,Cg,feamodel.nodalTerms.concStiffGen,feamodel.nodalTerms.concMassGen,feamodel.nodalTerms.concDampGen)

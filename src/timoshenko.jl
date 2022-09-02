@@ -342,21 +342,21 @@ function calculateTimoshenkoElementInitialRun(elementOrder,modalFlag,xloc,sectio
     #
     if (concMassFlag)
         #modify element mass, moi, and xm to account for concentrated terms
-        elementMass = elementMass + sum(concMass[1,:])
+        elementMass = elementMass + concMass[1,1] + concMass[1,7] #TODO: why not the other terms? + sum(concMass[1,:])
 
-        elementMOI[1,1] = elementMOI[1,1] + concMass[1,1]*(y[1]^2 + z[1]^2)+ concMass[1,2]*(y[2]^2 + z[2]^2) + concMass[2,1] + concMass[2,2]
-        elementMOI[2,2] = elementMOI[2,2] + concMass[1,1]*(x[1]^2 + z[1]^2)+ concMass[1,2]*(x[2]^2 + z[2]^2) + concMass[3,1] + concMass[3,2]
-        elementMOI[3,3] = elementMOI[3,3] + concMass[1,1]*(x[1]^2 + y[1]^2)+ concMass[1,2]*(x[2]^2 + y[2]^2) + concMass[4,1] + concMass[4,2]
-        elementMOI[1,2] = elementMOI[1,2] - concMass[1,1]*x[1]*y[1] - concMass[1,2]*x[2]*y[2]
-        elementMOI[1,3] = elementMOI[1,3] - concMass[1,1]*x[1]*z[1] - concMass[1,2]*x[2]*z[2]
-        elementMOI[2,1] = elementMOI[2,1] - concMass[1,1]*x[1]*y[1] - concMass[1,2]*x[2]*y[2]
-        elementMOI[2,3] = elementMOI[2,3] - concMass[1,1]*y[1]*z[1] - concMass[1,2]*y[2]*z[2]
-        elementMOI[3,1] = elementMOI[3,1] - concMass[1,1]*x[1]*z[1] - concMass[1,2]*x[2]*z[2]
-        elementMOI[3,2] = elementMOI[3,2] - concMass[1,1]*y[1]*z[1] - concMass[1,2]*y[2]*z[2]
+        elementMOI[1,1] = elementMOI[1,1] + concMass[1,1]*(y[1]^2 + z[1]^2)+ concMass[1,7]*(y[2]^2 + z[2]^2) + concMass[4,4] + concMass[4,10]
+        elementMOI[2,2] = elementMOI[2,2] + concMass[1,1]*(x[1]^2 + z[1]^2)+ concMass[1,7]*(x[2]^2 + z[2]^2) + concMass[5,5] + concMass[5,11]
+        elementMOI[3,3] = elementMOI[3,3] + concMass[1,1]*(x[1]^2 + y[1]^2)+ concMass[1,7]*(x[2]^2 + y[2]^2) + concMass[6,6] + concMass[6,12]
+        elementMOI[1,2] = elementMOI[1,2] - concMass[1,1]*x[1]*y[1] - concMass[1,7]*x[2]*y[2]
+        elementMOI[1,3] = elementMOI[1,3] - concMass[1,1]*x[1]*z[1] - concMass[1,7]*x[2]*z[2]
+        elementMOI[2,1] = elementMOI[2,1] - concMass[1,1]*x[1]*y[1] - concMass[1,7]*x[2]*y[2]
+        elementMOI[2,3] = elementMOI[2,3] - concMass[1,1]*y[1]*z[1] - concMass[1,7]*y[2]*z[2]
+        elementMOI[3,1] = elementMOI[3,1] - concMass[1,1]*x[1]*z[1] - concMass[1,7]*x[2]*z[2]
+        elementMOI[3,2] = elementMOI[3,2] - concMass[1,1]*y[1]*z[1] - concMass[1,7]*y[2]*z[2]
 
-        elxm[1] = elxm[1] + concMass[1,1]*x[1] + concMass[1,2]*x[2]
-        elxm[2] = elxm[2] + concMass[1,1]*y[1] + concMass[1,2]*y[2]
-        elxm[3] = elxm[3] + concMass[1,1]*z[1] + concMass[1,2]*z[2]
+        elxm[1] = elxm[1] + concMass[1,1]*x[1] + concMass[1,7]*x[2]
+        elxm[2] = elxm[2] + concMass[1,1]*y[1] + concMass[1,7]*y[2]
+        elxm[3] = elxm[3] + concMass[1,1]*z[1] + concMass[1,7]*z[2]
     end
 
     #store element properties
@@ -405,6 +405,7 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
     OmegaDot       = input.OmegaDot
     concStiff      = input.concStiff
     concMass       = input.concMass
+    concDamp       = input.concDamp
     concLoad       = input.concLoad
     useDisp        = input.useDisp
     preStress      = input.preStress
@@ -1015,25 +1016,22 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
     ##concentrated mass
     #NOTE: Concentrated mass terms would modify 4,5,6 and 10,11,12 entries
     # if some ycm or zcm offset from the node was accounted for in concentrated mass terms
+    ## Apply concentrated terms, including cross-coupling between concentrated mass and the other terms
+    # TODO: should other cross-couplings be included here now since the off-diagonals can be included?
 
     concMassFlag = !isempty(findall(x->x!=0,concMass))
     concStiffFlag = !isempty(findall(x->x!=0,concStiff))
+    concDampFlag = !isempty(findall(x->x!=0,concDamp))
     concLoadFlag = !isempty(findall(x->x!=0,concLoad))
     if concMassFlag
         #modify Me for concentrated mass
-        Me[1,1] = Me[1,1] + concMass[1,1]
-        Me[2,2] = Me[2,2] + concMass[1,1]
-        Me[3,3] = Me[3,3] + concMass[1,1]
-        Me[4,4] = Me[4,4] + concMass[2,1]
-        Me[5,5] = Me[5,5] + concMass[3,1]
-        Me[6,6] = Me[6,6] + concMass[4,1]
+        Me[1:6,1:6] += concMass[:,1:6]
+        Me[7:12,7:12] += concMass[:,7:12]
+    end
 
-        Me[7,7] = Me[7,7] + concMass[1,2]
-        Me[8,8] = Me[8,8] + concMass[1,2]
-        Me[9,9] = Me[9,9] + concMass[1,2]
-        Me[10,10] = Me[10,10] + concMass[2,2]
-        Me[11,11] = Me[11,11] + concMass[3,2]
-        Me[12,12] = Me[12,12] + concMass[4,2]
+    if concMassFlag || concDampFlag
+        Ce[1:6,1:6] += concDamp[:,1:6]
+        Ce[7:12,7:12] += concDamp[:,7:12]
 
         #modify Ce for concentrated mass
         Ce[1,2] = Ce[1,2] - 2*concMass[1,1]*omega_z
@@ -1042,56 +1040,49 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
         Ce[3,1] = Ce[3,1] - 2*concMass[1,1]*omega_y
         Ce[2,3] = Ce[2,3] - 2*concMass[1,1]*omega_x
         Ce[3,2] = Ce[3,2] + 2*concMass[1,1]*omega_x
-        Ce[7,8] = Ce[7,8] - 2*concMass[1,2]*omega_z
-        Ce[8,7] = Ce[8,7] + 2*concMass[1,2]*omega_z
-        Ce[7,9] = Ce[7,9] + 2*concMass[1,2]*omega_y
-        Ce[9,7] = Ce[9,7] - 2*concMass[1,2]*omega_y
-        Ce[8,9] = Ce[8,9] - 2*concMass[1,2]*omega_x
-        Ce[9,8] = Ce[9,8] + 2*concMass[1,2]*omega_x
+        Ce[7,8] = Ce[7,8] - 2*concMass[1,7]*omega_z
+        Ce[8,7] = Ce[8,7] + 2*concMass[1,7]*omega_z
+        Ce[7,9] = Ce[7,9] + 2*concMass[1,7]*omega_y
+        Ce[9,7] = Ce[9,7] - 2*concMass[1,7]*omega_y
+        Ce[8,9] = Ce[8,9] - 2*concMass[1,7]*omega_x
+        Ce[9,8] = Ce[9,8] + 2*concMass[1,7]*omega_x
     end
 
     if concMassFlag || concStiffFlag
         #modify Ke for concentrated mass
-        Ke[1,1] = Ke[1,1] + concStiff[1,1] - concMass[1,1]*(omega_y^2 + omega_z^2)
-        Ke[1,2] = Ke[1,2] + concMass[1,1]*omega_x*omega_y - concMass[1,1]*omegaDot_z
-        Ke[2,1] = Ke[2,1] + concMass[1,1]*omega_x*omega_y + concMass[1,1]*omegaDot_z
-        Ke[1,3] = Ke[1,3] + concMass[1,1]*omega_x*omega_z + concMass[1,1]*omegaDot_y
-        Ke[3,1] = Ke[3,1] + concMass[1,1]*omega_x*omega_z - concMass[1,1]*omegaDot_y
-        Ke[2,3] = Ke[2,3] + concMass[1,1]*omega_y*omega_z - concMass[1,1]*omegaDot_x
-        Ke[3,2] = Ke[3,2] + concMass[1,1]*omega_y*omega_z + concMass[1,1]*omegaDot_x
-        Ke[2,2] = Ke[2,2] + concStiff[2,1] - concMass[1,1]*(omega_x^2 + omega_z^2)
-        Ke[3,3] = Ke[3,3] + concStiff[3,1] - concMass[1,1]*(omega_x^2 + omega_y^2)
-        Ke[4,4] = Ke[4,4] + concStiff[4,1]
-        Ke[5,5] = Ke[5,5] + concStiff[5,1]
-        Ke[6,6] = Ke[6,6] + concStiff[6,1]
-        Ke[7,7] = Ke[7,7] + concStiff[1,2] - concMass[1,2]*(omega_y^2 + omega_z^2)
-        Ke[7,8] = Ke[7,8] + concMass[1,2]*omega_x*omega_y - concMass[1,2]*omegaDot_z
-        Ke[8,7] = Ke[8,7] + concMass[1,2]*omega_x*omega_y + concMass[1,2]*omegaDot_z
-        Ke[7,9] = Ke[7,9] + concMass[1,2]*omega_x*omega_z + concMass[1,2]*omegaDot_y
-        Ke[9,7] = Ke[9,7] + concMass[1,2]*omega_x*omega_z - concMass[1,2]*omegaDot_y
-        Ke[8,9] = Ke[8,9] + concMass[1,2]*omega_y*omega_z - concMass[1,2]*omegaDot_x
-        Ke[9,8] = Ke[9,8] + concMass[1,2]*omega_y*omega_z + concMass[1,2]*omegaDot_x
-        Ke[8,8] = Ke[8,8] + concStiff[2,2] - concMass[1,2]*(omega_x^2 + omega_z^2)
-        Ke[9,9] = Ke[9,9] + concStiff[3,2] - concMass[1,2]*(omega_x^2 + omega_y^2)
-        Ke[10,10] = Ke[10,10] + concStiff[4,2]
-        Ke[11,11] = Ke[11,11] + concStiff[5,2]
-        Ke[12,12] = Ke[12,12] + concStiff[6,2]
+        Ke[1:6,1:6] += concStiff[:,1:6]
+        Ke[7:12,7:12] += concStiff[:,7:12]
+        Ke[1,1] -= concMass[1,1]*(omega_y^2 + omega_z^2)
+        Ke[1,2] += concMass[1,1]*omega_x*omega_y - concMass[1,1]*omegaDot_z
+        Ke[2,1] += concMass[1,1]*omega_x*omega_y + concMass[1,1]*omegaDot_z
+        Ke[1,3] += concMass[1,1]*omega_x*omega_z + concMass[1,1]*omegaDot_y
+        Ke[3,1] += concMass[1,1]*omega_x*omega_z - concMass[1,1]*omegaDot_y
+        Ke[2,3] += concMass[1,1]*omega_y*omega_z - concMass[1,1]*omegaDot_x
+        Ke[3,2] += concMass[1,1]*omega_y*omega_z + concMass[1,1]*omegaDot_x
+        Ke[2,2] -= concMass[1,1]*(omega_x^2 + omega_z^2)
+        Ke[3,3] -= concMass[1,1]*(omega_x^2 + omega_y^2)
+        Ke[7,7] -= concMass[1,7]*(omega_y^2 + omega_z^2)
+        Ke[7,8] += concMass[1,7]*omega_x*omega_y - concMass[1,7]*omegaDot_z
+        Ke[8,7] += concMass[1,7]*omega_x*omega_y + concMass[1,7]*omegaDot_z
+        Ke[7,9] += concMass[1,7]*omega_x*omega_z + concMass[1,7]*omegaDot_y
+        Ke[9,7] += concMass[1,7]*omega_x*omega_z - concMass[1,7]*omegaDot_y
+        Ke[8,9] += concMass[1,7]*omega_y*omega_z - concMass[1,7]*omegaDot_x
+        Ke[9,8] += concMass[1,7]*omega_y*omega_z + concMass[1,7]*omegaDot_x
+        Ke[8,8] -= concMass[1,7]*(omega_x^2 + omega_z^2)
+        Ke[9,9] -= concMass[1,7]*(omega_x^2 + omega_y^2)
     end
 
-    #modify Fe for  concentrated load
     if concMassFlag || concLoadFlag
-        Fe[1] = Fe[1] + concLoad[1,1] + concMass[1,1]*(x[1]*(omega_y^2 + omega_z^2)-omega_x*omega_y*y[1] - omega_x*omega_z*z[1]) + concMass[1,1]*(y[1]*omegaDot_z-z[1]*omegaDot_y)  -  concMass[1,1]*a_x
-        Fe[2] = Fe[2] + concLoad[2,1] + concMass[1,1]*(y[1]*(omega_x^2 + omega_z^2)-omega_y*omega_z*z[1] - omega_y*omega_x*x[1]) + concMass[1,1]*(z[1]*omegaDot_x-x[1]*omegaDot_z)  -  concMass[1,1]*a_y
-        Fe[3] = Fe[3] + concLoad[3,1] + concMass[1,1]*(z[1]*(omega_x^2 + omega_y^2)-omega_z*omega_x*x[1] - omega_z*omega_y*y[1]) + concMass[1,1]*(x[1]*omegaDot_y-y[1]*omegaDot_x)  -  concMass[1,1]*a_z
-        Fe[4] = Fe[4] + concLoad[4,1]
-        Fe[5] = Fe[5] + concLoad[5,1]
-        Fe[6] = Fe[6] + concLoad[6,1]
-        Fe[7] = Fe[7] + concLoad[1,2] + concMass[1,2]*(x[2]*(omega_y^2 + omega_z^2)- omega_x*omega_y*y[2] - omega_x*omega_z*z[2]) + concMass[1,2]*(y[2]*omegaDot_z-z[2]*omegaDot_y) -  concMass[1,2]*a_x
-        Fe[8] = Fe[8] + concLoad[2,2] + concMass[1,2]*(y[2]*(omega_x^2 + omega_z^2)-omega_y*omega_z*z[2] - omega_y*omega_x*x[2]) + concMass[1,2]*(z[2]*omegaDot_x-x[2]*omegaDot_z)  -  concMass[1,2]*a_y
-        Fe[9] = Fe[9] + concLoad[3,2] + concMass[1,2]*(z[2]*(omega_x^2 + omega_y^2)-omega_z*omega_x*x[2] - omega_z*omega_y*y[2]) + concMass[1,2]*(x[2]*omegaDot_y-y[2]*omegaDot_x)  -  concMass[1,2]*a_z
-        Fe[10] = Fe[10] + concLoad[4,2]
-        Fe[11] = Fe[11] + concLoad[5,2]
-        Fe[12] = Fe[12] + concLoad[6,2]
+        Fe[1:6] += concLoad[:,1]
+        Fe[7:12] += concLoad[:,2]
+
+        #modify Fe for  concentrated load
+        Fe[1] += concMass[1,1]*(x[1]*(omega_y^2 + omega_z^2)-omega_x*omega_y*y[1] - omega_x*omega_z*z[1]) + concMass[1,1]*(y[1]*omegaDot_z-z[1]*omegaDot_y)  -  concMass[1,1]*a_x
+        Fe[2] += concMass[1,1]*(y[1]*(omega_x^2 + omega_z^2)-omega_y*omega_z*z[1] - omega_y*omega_x*x[1]) + concMass[1,1]*(z[1]*omegaDot_x-x[1]*omegaDot_z)  -  concMass[1,1]*a_y
+        Fe[3] += concMass[1,1]*(z[1]*(omega_x^2 + omega_y^2)-omega_z*omega_x*x[1] - omega_z*omega_y*y[1]) + concMass[1,1]*(x[1]*omegaDot_y-y[1]*omegaDot_x)  -  concMass[1,1]*a_z
+        Fe[7] += concMass[1,7]*(x[2]*(omega_y^2 + omega_z^2)-omega_x*omega_y*y[2] - omega_x*omega_z*z[2]) + concMass[1,7]*(y[2]*omegaDot_z-z[2]*omegaDot_y)  -  concMass[1,7]*a_x
+        Fe[8] += concMass[1,7]*(y[2]*(omega_x^2 + omega_z^2)-omega_y*omega_z*z[2] - omega_y*omega_x*x[2]) + concMass[1,7]*(z[2]*omegaDot_x-x[2]*omegaDot_z)  -  concMass[1,7]*a_y
+        Fe[9] += concMass[1,7]*(z[2]*(omega_x^2 + omega_y^2)-omega_z*omega_x*x[2] - omega_z*omega_y*y[2]) + concMass[1,7]*(x[2]*omegaDot_y-y[2]*omegaDot_x)  -  concMass[1,7]*a_z
     end
 
 

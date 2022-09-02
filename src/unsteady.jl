@@ -96,6 +96,7 @@ function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,t
     elementOrder = feamodel.elementOrder
     numNodesPerEl = elementOrder + 1
     numDOFPerNode = 6
+    countedNodes = []
     totalNumDOF = mesh.numNodes * numDOFPerNode
     eldisp = zeros(numNodesPerEl*numDOFPerNode)
     eldisp_sm1 = zeros(numNodesPerEl*numDOFPerNode)
@@ -124,12 +125,12 @@ function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,t
         Fg = zero(Fg1)
         nodalTerms,timeInt = TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,
         dispData,Omega,elStorage;Kg,Fg,eldisp_sm1,eldispdot,eldispddot,eldispiter,rbData,CN2H,delta_t,
-        OmegaDot,displ_im1,displdot_im1,displddot_im1,iterationCount,predef)
+        OmegaDot,displ_im1,displdot_im1,displddot_im1,iterationCount,predef,countedNodes)
 
         #apply general 6x6  mass, damping, and stiffness matrices to nodes
         # Except only stiffness is used here... #TODO: is this correct?  Shouldn't the cross coupling between say mass and force (from acceleration) be included with the cross terms?
         # The way it's coded, if a 6x6 matrix is used, the diagonals are used in the timoshenko dynamic elements, and the cross terms (without the diagonal) are applied here.
-        Kg,_,_ = applyGeneralConcentratedTerms(Kg,Kg,Kg,nodalTerms.concStiffGen,nodalTerms.concMassGen,nodalTerms.concDampGen)
+        # Kg,_,_ = applyGeneralConcentratedTerms(Kg,Kg,Kg,nodalTerms.concStiffGen,nodalTerms.concMassGen,nodalTerms.concDampGen)
 
         #Apply external loads to structure
         for i=1:length(Fexternal)
@@ -179,7 +180,7 @@ function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,t
     #Calculate reaction at turbine base (hardwired to node number 1)
     reactionNodeNumber = feamodel.platformTurbineConnectionNodeNumber
 
-    FReaction = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_im1,rbData,Omega,OmegaDot,CN2H)
+    FReaction = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_im1,rbData,Omega,OmegaDot,CN2H,countedNodes)
     #Calculate strain
     elStrain = calculateStrainForElements(mesh.numEl,numNodesPerEl,numDOFPerNode,conn,feamodel.elementOrder,el,displ_im1,feamodel.nlOn)
     if (iterationCount>=maxIterations)
@@ -363,14 +364,14 @@ Internal, calculates the reaction force associated with an element.
 #Output
 * `Fpp`            vector containing reaction force vector associated with element
 """
-function elementPostProcess(elementNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H)
+function elementPostProcess(elementNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H,countedNodes)
     elementOrder = feamodel.elementOrder
     numNodesPerEl = elementOrder + 1
     numDOFPerNode = 6
     eldisp = zeros(numNodesPerEl*numDOFPerNode)
 
     Fpp = TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,dispData,Omega,elStorage;
-        rbData,CN2H,OmegaDot,displ_im1=displ_iter,timeInt,postprocess=true,elementNumber)
+        rbData,CN2H,OmegaDot,displ_im1=displ_iter,timeInt,postprocess=true,elementNumber,countedNodes)
 
     return Fpp
 end

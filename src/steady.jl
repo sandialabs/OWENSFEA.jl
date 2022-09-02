@@ -38,6 +38,7 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
     # dispm1 = zeros(12) #declare type
     dispOld = copy(displ) #initialize scope
     staticAnalysisSuccessfulForLoadStep = false #initialize scope
+    countedNodes = []
 
     elementOrder = feamodel.elementOrder #extract element order from feamodel
     numNodesPerEl = elementOrder + 1 #do initialization
@@ -80,7 +81,7 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
             Kg = zero(Kg1)
             Fg = zero(Fg1)
             TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,displ,Omega,elStorage;
-                Kg,Fg,iterationCount,dispOld,loadStepPrev,loadStep,OmegaDot)
+                Kg,Fg,iterationCount,dispOld,loadStepPrev,loadStep,OmegaDot,countedNodes)
 
             # Fexternal, Fdof = externalForcingStatic()  #TODO: get arbitrary external loads from externalForcingStatic() function
             for i=1:length(Fdof)
@@ -136,17 +137,13 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
     # println("Elapsed time for static analysis(s):")
     # println(t_static)
 
-    #     reactionNodeNumber = 1 #place holder for nodal reaction force
-    #     [FReaction] = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,...
-    #         elStorage,[],[],displ,[],Omega,0,[])
-
     elStrain = calculateStrainForElements(mesh.numEl,numNodesPerEl,numDOFPerNode,conn,elementOrder,el,displ,feamodel.nlOn)
     #feamodel.platformTurbineConnectionNodeNumber #TODO: multiple points?  the whole mesh?
     timeInt = nothing
     dispData = copy(displ)
     rbData = zeros(9)
     CN2H = 1.0*LinearAlgebra.I(3)
-    FReaction = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ,rbData,Omega,0.0,CN2H)
+    FReaction = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ,rbData,Omega,0.0,CN2H,countedNodes)
 
     return displ,elStrain,staticAnalysisSuccessful,FReaction
 

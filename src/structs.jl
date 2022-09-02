@@ -314,6 +314,7 @@ mutable struct ElInput
     displ_iter
     concMass
     concStiff
+    concDamp
     concLoad
     dispm1
     x
@@ -572,15 +573,13 @@ mutable struct NodalTerms
     concLoad
     concStiff
     concMass
-    concStiffGen
-    concMassGen
-    concDampGen
+    concDamp
 end
 
 """
 Internal, NodalTerms node number, local dof (diagonal), and value
 """
-mutable struct ConcNDL
+mutable struct ConcNDL1D
     nodeNum
     dof
     val
@@ -589,7 +588,7 @@ end
 """
 Internal, NodalTerms node number, local dof1, local dof2, and value
 """
-mutable struct ConcNDLGen
+mutable struct ConcNDL2D
     nodeNum
     dof1
     dof2
