@@ -201,11 +201,6 @@ function TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,dispData,Omega,elStorage;
             end
         end
 
-        #get concentrated terms associated with elemet
-        concLoad
-        concStiff
-        concMass
-        concDamp
         # concStiff, concMass, concDamp, concLoad = applyConcentratedTerms(feamodel.nodalTerms.concStiff, feamodel.nodalTerms.concMass, feamodel.nodalTerms.concDamp, feamodel.nodalTerms.concLoad, feamodel.joint, numNodes, numDOFPerNode)
         concStiff, concMass, concDamp, concLoad, countedNodes = getElementConcTerms!(feamodel.nodalTerms.concStiff, feamodel.nodalTerms.concMass, feamodel.nodalTerms.concDamp, feamodel.nodalTerms.concLoad, conn[i,:], numDOFPerNode, countedNodes)
         if el.rotationalEffects[i]!=1

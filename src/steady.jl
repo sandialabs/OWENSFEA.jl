@@ -90,8 +90,8 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
 
             #----------------------------------------------------------------------
 
-            #apply general 6x6  mass, damping, and stiffness matrices to nodes
-            Kg,_,_ = applyGeneralConcentratedTerms(Kg,Kg,Kg,feamodel.nodalTerms.concStiffGen,feamodel.nodalTerms.concMassGen,feamodel.nodalTerms.concDampGen)
+            # #apply general 6x6  mass, damping, and stiffness matrices to nodes
+            # Kg,_,_ = applyGeneralConcentratedTerms(Kg,Kg,Kg,feamodel.nodalTerms.concStiffGen,feamodel.nodalTerms.concMassGen,feamodel.nodalTerms.concDampGen)
 
             #APPLY BOUNDARY CONDITIONS
             Kg = applyConstraints(Kg,feamodel.jointTransform) #modify global stiffness matrix for joint constraints using joint transform

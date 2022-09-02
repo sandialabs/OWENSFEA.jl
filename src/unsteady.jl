@@ -17,6 +17,8 @@ function initialElementCalculations(feamodel,el,mesh)
 
     #initial element calculation
     numNodesPerEl = 2
+    numDOFPerNode = 6
+    countedNodes = []
 
     elStorage = Array{ElStorage, 1}(undef, mesh.numEl)
     elx = zeros(numNodesPerEl)
@@ -41,8 +43,8 @@ function initialElementCalculations(feamodel,el,mesh)
             elz[j] = mesh.z[Int(mesh.conn[i,j])]
         end
 
-        #get concentrated terms associated with element
-        massConc,_,_,_,_,_ = ConcMassAssociatedWithElement(mesh.conn[i,:],feamodel.joint,feamodel.nodalTerms.concMass,feamodel.nodalTerms.concStiff,feamodel.nodalTerms.concLoad)
+        #get concentrated terms associated with element # TODO: This is redundant and can probably be cleaned up, and might mess up double counting?
+        _, massConc, _, _, countedNodes = getElementConcTerms!(feamodel.nodalTerms.concStiff, feamodel.nodalTerms.concMass, feamodel.nodalTerms.concDamp, feamodel.nodalTerms.concLoad, mesh.conn[i,:], numDOFPerNode, countedNodes)
 
         concMassFlag = !isempty(findall(x->x!=0,massConc))
 

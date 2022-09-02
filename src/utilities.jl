@@ -1329,7 +1329,7 @@ mesh connectivity or joint constraints
 #Input
 * `nodeNum`    node number joint constraints are desired at
 * `conn`       object containing mesh connectivity
-* `jointData`  object containing joint informatino
+* `jointData`  object containing joint information
 
 
 #Output
@@ -1396,12 +1396,12 @@ function getElementConcTerms!(Kconc, Mconc, Cconc, Fconc, elNodes, numDOFPerNode
         elKconc1 = zeros(numDOFPerNode, numDOFPerNode)
         elMconc1 = zeros(numDOFPerNode, numDOFPerNode)
         elCconc1 = zeros(numDOFPerNode, numDOFPerNode)
-        elFconc1 = zeros(1, numDOFPerNode)
+        elFconc1 = zeros(numDOFPerNode)
     else
         elKconc1 = Kconc[(elNodes[1]-1)*numDOFPerNode+1:elNodes[1]*numDOFPerNode, (elNodes[1]-1)*numDOFPerNode+1:elNodes[1]*numDOFPerNode]
         elMconc1 = Mconc[(elNodes[1]-1)*numDOFPerNode+1:elNodes[1]*numDOFPerNode, (elNodes[1]-1)*numDOFPerNode+1:elNodes[1]*numDOFPerNode]
         elCconc1 = Cconc[(elNodes[1]-1)*numDOFPerNode+1:elNodes[1]*numDOFPerNode, (elNodes[1]-1)*numDOFPerNode+1:elNodes[1]*numDOFPerNode]
-        elFconc1 = Fconc[(elNodes[1]-1)*numDOFPerNode+1:elNodes[1]*numDOFPerNode, (elNodes[1]-1)*numDOFPerNode+1:elNodes[1]*numDOFPerNode]
+        elFconc1 = Fconc[(elNodes[1]-1)*numDOFPerNode+1:elNodes[1]*numDOFPerNode]
         append!(appliedNodes, elNodes[1])
     end
 
@@ -1409,12 +1409,12 @@ function getElementConcTerms!(Kconc, Mconc, Cconc, Fconc, elNodes, numDOFPerNode
         elKconc2 = zeros(numDOFPerNode, numDOFPerNode)
         elMconc2 = zeros(numDOFPerNode, numDOFPerNode)
         elCconc2 = zeros(numDOFPerNode, numDOFPerNode)
-        elFconc2 = zeros(1,numDOFPerNode)
+        elFconc2 = zeros(numDOFPerNode)
     else
         elKconc2 = Kconc[(elNodes[2]-1)*numDOFPerNode+1:elNodes[2]*numDOFPerNode, (elNodes[2]-1)*numDOFPerNode+1:elNodes[2]*numDOFPerNode]
         elMconc2 = Mconc[(elNodes[2]-1)*numDOFPerNode+1:elNodes[2]*numDOFPerNode, (elNodes[2]-1)*numDOFPerNode+1:elNodes[2]*numDOFPerNode]
         elCconc2 = Cconc[(elNodes[2]-1)*numDOFPerNode+1:elNodes[2]*numDOFPerNode, (elNodes[2]-1)*numDOFPerNode+1:elNodes[2]*numDOFPerNode]
-        elFconc2 = Fconc[(elNodes[2]-1)*numDOFPerNode+1:elNodes[2]*numDOFPerNode, (elNodes[2]-1)*numDOFPerNode+1:elNodes[2]*numDOFPerNode]
+        elFconc2 = Fconc[(elNodes[2]-1)*numDOFPerNode+1:elNodes[2]*numDOFPerNode]
         append!(appliedNodes, elNodes[2])
     end
 
@@ -1424,84 +1424,6 @@ function getElementConcTerms!(Kconc, Mconc, Cconc, Fconc, elNodes, numDOFPerNode
     elFconc = hcat(elFconc1, elFconc2)
 
     return elKconc, elMconc, elCconc, elFconc, appliedNodes
-end
-
-
-"""
-Internal, applies 6x6 concentrated nodal terms
-"""
-function applyConcentratedTerms(concStiff, concMass, concDamp, concLoad, joint, numNodes, numDOFPerNode)
-
-    Kconc = zeros(numNodes*numDOFPerNode, numNodes*numDOFPerNode)
-    Mconc = zeros(numNodes*numDOFPerNode, numNodes*numDOFPerNode)
-    Cconc = zeros(numNodes*numDOFPerNode, numNodes*numDOFPerNode)
-    Fconc = zeros(numNodes*numDOFPerNode)
-
-    if !isempty(concStiff)
-        for i=1:length(concStiff)
-            nodeNum = concStiff[i].nodeNum
-            dof1 = concStiff[i].dof1
-            dof2 = concStiff[i].dof2
-            val = concStiff[i].val
-            gdof1 = (nodeNum-1)*6 + dof1
-            gdof2 = (nodeNum-1)*6 + dof2
-
-            Kconc[gdof1,gdof2] += val
-
-        end
-    end
-
-    if !isempty(concMass)
-        for i=1:length(concMass)
-            nodeNum = concMass[i].nodeNum
-            dof1 = concMass[i].dof1
-            dof2 = concMass[i].dof2
-            val = concMass[i].val
-            gdof1 = (nodeNum-1)*6 + dof1
-            gdof2 = (nodeNum-1)*6 + dof2
-
-            Mconc[gdof1,gdof2] += val
-        end
-    end
-
-    if size(joint)[1] > 0 # if there are joints in the model, apply joint mass to the concentrated mass for its master node
-        for i=1:size(joint)[1]
-            nodeNum = joint[i,2]
-            massdofs = [1 1; 2 2; 3 3] # the first three diagonal terms of the mass matrix are the pure mass at the node
-            val = joint[i,5]
-            gdofs = (nodeNum-1)*6 .+ massdofs
-
-            for j=1:length(gdofs)
-                Mconc[gdofs[j,:]] += val
-            end
-        end
-    end
-
-    if !isempty(concDamp)
-        for i=1:length(concDamp)
-            nodeNum = concDamp[i].nodeNum
-            dof1 = concDamp[i].dof1
-            dof2 = concDamp[i].dof2
-            val = concDamp[i].val
-            gdof1 = (nodeNum-1)*6 + dof1
-            gdof2 = (nodeNum-1)*6 + dof2
-
-            Cconc[gdof1,gdof2] += val
-        end
-    end
-
-    if !isempty(concLoad)
-        for i=1:length(concLoad)
-            nodeNum = concLoad[i].nodeNum
-            val = concLoad[i].val
-            dof = concLoad[i].dof
-            gdof = (nodeNum-1)*numDOFPerNode + dof
-
-            Fconc[gdof] += val
-        end
-    end
-
-    return Kconc, Mconc, Cconc, Fconc
 end
 
 """
@@ -1806,9 +1728,9 @@ end
 
 """
 
-    readNodalTerms(;filename="none",data=[1 "M6" 1 1 0.0])
+    applyConcentratedTerms(numNodes, numDOFPerNode; filename="none",data=[1 "M6" 1 1 0.0], jointData=[])
 
-Reads the nodal terms file or input array, processes, and stores data in the nodal terms object.
+Internal, applies 6x6 concentrated nodal terms from user input.
 
 #Input
 * `filename`:   string containing nodal terms filename
@@ -1817,125 +1739,88 @@ Reads the nodal terms file or input array, processes, and stores data in the nod
 #Output
 * `nodalTerms::NodalTerms`: see ?NodalTerms object containing concentrated nodal data
 """
-function readNodalTerms(;filename="none",data=[1 "M6" 1 1 0.0])
+function function applyConcentratedTerms(numNodes, numDOFPerNode; filename="none",data=[1 "M6" 1 1 0.0], jointData=[])
 
     if filename!="none" && !occursin("[",filename)
         data = DelimitedFiles.readdlm(filename,' ',skipstart = 0)
     end
 
-    n_M = sum(count.(x->(x=='M'), data[:,2]))
-    n_K = sum(count.(x->(x=='K'), data[:,2]))
-    n_C = sum(count.(x->(x=='C'), data[:,2]))
-    n_F = sum(count.(x->(x=='F'), data[:,2]))
-
-    concMnodeNum = zeros(n_M)
-    concMdof1 = zeros(n_M)
-    concMdof2 = zeros(n_M)
-    concMval = zeros(n_M)
-
-    concKnodeNum = zeros(n_K)
-    concKdof1 = zeros(n_K)
-    concKdof2 = zeros(n_K)
-    concKval = zeros(n_K)
-
-    concCnodeNum = zeros(n_C)
-    concCdof1 = zeros(n_C)
-    concCdof2 = zeros(n_C)
-    concCval = zeros(n_C)
-
-    concFnodeNum = zeros(n_F)
-    concFdof1 = zeros(n_F)
-    concFdof2 = zeros(n_F)
-    concFval = zeros(n_F)
-
-    i_M = 1
-    i_K = 1
-    i_C = 1
-    i_F = 1
+    concStiff = zeros(numNodes*numDOFPerNode, numNodes*numDOFPerNode)
+    concMass = zeros(numNodes*numDOFPerNode, numNodes*numDOFPerNode)
+    concDamp = zeros(numNodes*numDOFPerNode, numNodes*numDOFPerNode)
+    concLoad = zeros(numNodes*numDOFPerNode)
     for i_data = 1:length(data[:,1])
         if data[i_data,2][1] == 'M'
-            concMnodeNum[i_M] = data[i_data,1]
-            concMdof1[i_M] = data[i_data,3]
+            nodeNum = data[i_data,1]
+            dof1 = data[i_data,3]
             if length(data[1,:])==5 #If 6x6 general method
-                concMdof2[i_M] = data[i_data,4]
+                dof2 = data[i_data,4]
+            elseif length(data[1,:])==4
+                @warn "Only one degree of freedom given for concentrated mass; applying at diagonal."
+                dof2 = data[i_data,3]
+            else
+                error("Wrong number of inputs in the concentrated mass term.")
             end
-            concMval[i_M] = data[i_data,end]
-            i_M += 1
+            val = data[i_data,end]
+            gdof1 = (nodeNum-1)*6 + dof1
+            gdof2 = (nodeNum-1)*6 + dof2
+            concMass[gdof1,gdof2] += val
         elseif data[i_data,2][1] == 'K'
-            concKnodeNum[i_K] = data[i_data,1]
-            concKdof1[i_K] = data[i_data,3]
+            nodeNum = data[i_data,1]
+            dof1 = data[i_data,3]
             if length(data[1,:])==5 #If 6x6 general method
-                concKdof2[i_K] = data[i_data,4]
+                dof2 = data[i_data,4]
+            elseif length(data[1,:])==4
+                @warn "Only one degree of freedom given for concentrated stiffness; applying at diagonal."
+                dof2 = data[i_data,3]
+            else
+                error("Wrong number of inputs in the concentrated stiffness term.")
             end
-            concKval[i_K] = data[i_data,end]
-            i_K += 1
+            val = data[i_data,end]
+            gdof1 = (nodeNum-1)*6 + dof1
+            gdof2 = (nodeNum-1)*6 + dof2
+            concStiff[gdof1,gdof2] += val
         elseif data[i_data,2][1] == 'C'
-            concCnodeNum[i_C] = data[i_data,1]
-            concCdof1[i_C] = data[i_data,3]
+            nodeNum = data[i_data,1]
+            dof1 = data[i_data,3]
             if length(data[1,:])==5 #If 6x6 general method
-                concCdof2[i_C] = data[i_data,4]
+                dof2 = data[i_data,4]
+            elseif length(data[1,:])==4
+                @warn "Only one degree of freedom given for concentrated damping; applying at diagonal."
+                dof2 = data[i_data,3]
+            else
+                error("Wrong number of inputs in the concentrated damping term.")
             end
-            concCval[i_C] = data[i_data,end]
-            i_C += 1
+            val = data[i_data,end]
+            gdof1 = (nodeNum-1)*6 + dof1
+            gdof2 = (nodeNum-1)*6 + dof2
+            concDamp[gdof1,gdof2] += val
         elseif data[i_data,2][1] == 'F'
-            concFnodeNum[i_F] = data[i_data,1]
-            concFdof1[i_F] = data[i_data,3]
-            if length(data[1,:])==5 #If 6x6 general method
-                concFdof2[i_F] = data[i_data,4]
+            nodeNum = data[i_data,1]
+            if length(data[1,:])==5
+                @warn "Concentrated loads are one-dimensional, second degree of freedom input is ignored."
+            elseif length(data[1,:])!=4
+                error("Wrong number of inputs in the concentrated load term.")
             end
-            concFval[i_F] = data[i_data,end]
-            i_F += 1
+            dof = data[i_data,3]
+            val = data[i_data,end]
+            gdof = (nodeNum-1)*numDOFPerNode + dof
+            concLoad[gdof] += val
         else
             error("Unknown Nodal Data Type")
         end
-    end
+        if size(jointData)[1] > 0 # if there are joints in the model, apply joint mass to the concentrated mass for its master node
+              for i=1:size(jointData)[1]
+                  nodeNum = Int.(jointData[i,2])
+                  massdofs = [1 1; 2 2; 3 3] # the first three diagonal terms of the mass matrix are the pure mass at the node
+                  val = jointData[i,5]
+                  gdofs = Int.((nodeNum-1)*6 .+ massdofs)
 
-    if length(data[1,:])==5
-        concLoad = Array{ConcNDL1D, 1}(undef, n_F)
-        for i_F = 1:n_F
-            if concFdof1[i_F] == concFdof2[i_F]
-                concLoad[i_F]= ConcNDL1D(concFnodeNum[i_F], concFdof1[i_F], concFval[i_F])
+                  for j=1:size(gdofs)[1]
+                      concMass[gdofs[j,:]] .+= val
+                  end
             end
         end
-
-        concStiff = Array{ConcNDL2D, 1}(undef, n_K)
-        for i_K = 1:n_K
-            concStiff[i_K] = ConcNDL2D(concKnodeNum[i_K],concKdof1[i_K],concKdof2[i_K],concKval[i_K])
-        end
-
-        concMass = Array{ConcNDL2D, 1}(undef, n_M)
-        for i_M = 1:n_M
-            concMass[i_M] = ConcNDL2D(concMnodeNum[i_M], concMdof1[i_M], concMdof2[i_M], concMval[i_M])
-        end
-
-        concDamp = Array{ConcNDL2D, 1}(undef, n_C)
-        for i_C = 1:n_C
-            concDamp[i_C] = ConcNDL2D(concCnodeNum[i_C], concCdof1[i_C], concCdof2[i_C], concCval[i_C])
-        end
-
-    elseif length(data[1,:])==4
-        # This portion is different in that it uses the nongeneral terms and applies them to the general just at the diagonal, TODO: once the general terms are implemented, this needs to be updated
-        concLoad = Array{ConcNDL1D, 1}(undef, n_F)
-        for i_F = 1:n_F
-            concLoad[i_F]= ConcNDL1D(concFnodeNum[i_F], concFdof1[i_F], concFval[i_F])
-        end
-
-        concStiff = Array{ConcNDL2D, 1}(undef, n_K)
-        for i_K = 1:n_K
-            concStiff[i_K] = ConcNDL2D(concKnodeNum[i_K],concKdof1[i_K],concKdof1[i_K],concKval[i_K])
-        end
-
-        concMass = Array{ConcNDL2D, 1}(undef, n_M)
-        for i_M = 1:n_M
-            concMass[i_M] = ConcNDL2D(concMnodeNum[i_M], concMdof1[i_M], concMdof1[i_M], concMval[i_M])
-        end
-
-        concDampGen = Array{ConcNDL2D, 1}(undef, n_M)
-        for i_C = 1:n_C
-            concDamp[i_C] = ConcNDL2D(concCnodeNum[i_C], concCdof1[i_C], concCdof1[i_C], concCval[i_C])
-        end
-    else
-        error("Wrong number of terms in the .ndl file")
     end
 
     #store concentrated nodal term data in nodalTerms object

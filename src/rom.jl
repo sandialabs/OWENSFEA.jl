@@ -354,12 +354,6 @@ function  structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega,OmegaDo
 		end
 		###------- end element calculation and assembly ------------------
 		##
-		#Apply concentrated stiffness, mass, damping
-		Fe[1:6] += concLoad[:,1]
-		Fe[7:12] += concLoad[:,2]
-
-		Ke[1:6,1:6] += concStiff[:,1:6]
-		Ke[7:12,7:12] += concStiff[:,7:12]
 		
 		#Apply external loads to structure
 		for i=1:length(Fexternal)

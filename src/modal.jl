@@ -76,8 +76,8 @@ function  linearAnalysisModal(feamodel,mesh,el,displ,Omega,elStorage;returnDynMa
     nodalTerms,timeInt = TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,
     displ,Omega,elStorage;Kg,Mg,Cg,countedNodes)
 
-    #apply general 6x6  mass, damping, and stiffness matrices to nodes
-    Kg_all,Mg_all,Cg_all = applyGeneralConcentratedTerms(Kg,Mg,Cg,feamodel.nodalTerms.concStiffGen,feamodel.nodalTerms.concMassGen,feamodel.nodalTerms.concDampGen)
+    # #apply general 6x6  mass, damping, and stiffness matrices to nodes
+    # Kg_all,Mg_all,Cg_all = applyGeneralConcentratedTerms(Kg,Mg,Cg,feamodel.nodalTerms.concStiffGen,feamodel.nodalTerms.concMassGen,feamodel.nodalTerms.concDampGen)
 
     #----------------------------------------------------------------------
     #APPLY CONSTRAINT
