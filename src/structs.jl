@@ -41,7 +41,7 @@ end
         platformTurbineConnectionNodeNumber = 1,
         jointTransform = 0.0,
         reducedDOFList = zeros(Int,2),
-        numDofPerNode = 6,
+        numDOFPerNode = 6,
         numNodes = 0,
         numModes = 20,
         nlParams = 0,
@@ -75,7 +75,7 @@ Model inputs for FEA analysis, struct
 * `platformTurbineConnectionNodeNumber::int`: node at which reaction forces are calculated
 * `jointTransform`: not used as an input, is calculated, local transform between dependent and active DOFs for nodes associated with a particular joint
 * `reducedDOFList::Array{<:int}`: not used as an input, is calculated, map of original DOF numbering to reduced DOF numbering
-* `numDofPerNode::int`: number of degrees of freedom per node
+* `numDOFPerNode::int`: number of degrees of freedom per node
 * `numNodes::int`: total number of nodes in the mesh
 * `numModes::int`: number of modes to calculate
 * `nlParams::NlParams`: optional there in case the Nlparams struct is passed in, should be cleaned up since redundant
@@ -111,7 +111,7 @@ function FEAModel(;analysisType = "TNB",
     platformTurbineConnectionNodeNumber = 1,
     jointTransform = 0.0,
     reducedDOFList = zeros(Int,2),
-    numDofPerNode = 6,
+    numDOFPerNode = 6,
     numNodes = 0,
     numModes = 20,
     nlParams = 0,
@@ -128,14 +128,14 @@ function FEAModel(;analysisType = "TNB",
     predef = false)
 
     if jointTransform==0.0
-        jointTransform, reducedDOFList = GyricFEA.createJointTransform(joint,numNodes,numDofPerNode) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
+        jointTransform, reducedDOFList = GyricFEA.createJointTransform(joint,numNodes,numDOFPerNode) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
     end
     if nodalTerms == 0.0
         nodalTerms = GyricFEA.readNodalTerms() #Fill in the data structure with nothing
     end
 
     if pBC!=0
-        BC = makeBCdata(pBC,numNodes,numDofPerNode,reducedDOFList,jointTransform)
+        BC = makeBCdata(pBC,numNodes,numDOFPerNode,reducedDOFList,jointTransform)
     else
         BC = GyricFEA.BC_struct(0,
         0,

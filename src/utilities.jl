@@ -1661,7 +1661,7 @@ function setInitialConditions(initCond,u,numDOFPerNode)
         if (initCond[i,2]>numDOFPerNode) #error check
             error("setInitalConditios:: DOF greater than numDOFPerNode")
         end
-        index = (initCond[i,1]-1)*numDOFPerNode + initCond[i,2] #calculate global DOF number for initial condition
+        index = Int((initCond[i,1]-1)*numDOFPerNode + initCond[i,2]) #calculate global DOF number for initial condition
         u[index] = initCond[i,3] #specify initial condition using global DOF number
     end
 
@@ -1739,7 +1739,7 @@ Internal, applies 6x6 concentrated nodal terms from user input.
 #Output
 * `nodalTerms::NodalTerms`: see ?NodalTerms object containing concentrated nodal data
 """
-function function applyConcentratedTerms(numNodes, numDOFPerNode; filename="none",data=[1 "M6" 1 1 0.0], jointData=[])
+function applyConcentratedTerms(numNodes, numDOFPerNode; filename="none",data=[], jointData=[])
 
     if filename!="none" && !occursin("[",filename)
         data = DelimitedFiles.readdlm(filename,' ',skipstart = 0)
@@ -1749,76 +1749,81 @@ function function applyConcentratedTerms(numNodes, numDOFPerNode; filename="none
     concMass = zeros(numNodes*numDOFPerNode, numNodes*numDOFPerNode)
     concDamp = zeros(numNodes*numDOFPerNode, numNodes*numDOFPerNode)
     concLoad = zeros(numNodes*numDOFPerNode)
-    for i_data = 1:length(data[:,1])
-        if data[i_data,2][1] == 'M'
-            nodeNum = data[i_data,1]
-            dof1 = data[i_data,3]
-            if length(data[1,:])==5 #If 6x6 general method
-                dof2 = data[i_data,4]
-            elseif length(data[1,:])==4
-                @warn "Only one degree of freedom given for concentrated mass; applying at diagonal."
-                dof2 = data[i_data,3]
-            else
-                error("Wrong number of inputs in the concentrated mass term.")
-            end
-            val = data[i_data,end]
-            gdof1 = (nodeNum-1)*6 + dof1
-            gdof2 = (nodeNum-1)*6 + dof2
-            concMass[gdof1,gdof2] += val
-        elseif data[i_data,2][1] == 'K'
-            nodeNum = data[i_data,1]
-            dof1 = data[i_data,3]
-            if length(data[1,:])==5 #If 6x6 general method
-                dof2 = data[i_data,4]
-            elseif length(data[1,:])==4
-                @warn "Only one degree of freedom given for concentrated stiffness; applying at diagonal."
-                dof2 = data[i_data,3]
-            else
-                error("Wrong number of inputs in the concentrated stiffness term.")
-            end
-            val = data[i_data,end]
-            gdof1 = (nodeNum-1)*6 + dof1
-            gdof2 = (nodeNum-1)*6 + dof2
-            concStiff[gdof1,gdof2] += val
-        elseif data[i_data,2][1] == 'C'
-            nodeNum = data[i_data,1]
-            dof1 = data[i_data,3]
-            if length(data[1,:])==5 #If 6x6 general method
-                dof2 = data[i_data,4]
-            elseif length(data[1,:])==4
-                @warn "Only one degree of freedom given for concentrated damping; applying at diagonal."
-                dof2 = data[i_data,3]
-            else
-                error("Wrong number of inputs in the concentrated damping term.")
-            end
-            val = data[i_data,end]
-            gdof1 = (nodeNum-1)*6 + dof1
-            gdof2 = (nodeNum-1)*6 + dof2
-            concDamp[gdof1,gdof2] += val
-        elseif data[i_data,2][1] == 'F'
-            nodeNum = data[i_data,1]
-            if length(data[1,:])==5
-                @warn "Concentrated loads are one-dimensional, second degree of freedom input is ignored."
-            elseif length(data[1,:])!=4
-                error("Wrong number of inputs in the concentrated load term.")
-            end
-            dof = data[i_data,3]
-            val = data[i_data,end]
-            gdof = (nodeNum-1)*numDOFPerNode + dof
-            concLoad[gdof] += val
-        else
-            error("Unknown Nodal Data Type")
-        end
-        if size(jointData)[1] > 0 # if there are joints in the model, apply joint mass to the concentrated mass for its master node
-              for i=1:size(jointData)[1]
-                  nodeNum = Int.(jointData[i,2])
-                  massdofs = [1 1; 2 2; 3 3] # the first three diagonal terms of the mass matrix are the pure mass at the node
-                  val = jointData[i,5]
-                  gdofs = Int.((nodeNum-1)*6 .+ massdofs)
+    if !isempty(data)
+        for i_data = 1:length(data[:,1])
+            if data[i_data,2][1] == 'M'
+                nodeNum = data[i_data,1]
+                dof1 = data[i_data,3]
+                if length(data[1,:])==5 #If 6x6 general method
+                    dof2 = data[i_data,4]
+                elseif length(data[1,:])==4
+                    @warn "Only one degree of freedom given for concentrated mass; applying at diagonal."
+                    dof2 = data[i_data,3]
+                else
+                    error("Wrong number of inputs in the concentrated mass term.")
+                end
+                val = data[i_data,end]
+                gdof1 = (nodeNum-1)*6 + dof1
+                gdof2 = (nodeNum-1)*6 + dof2
+                concMass[gdof1,gdof2] += val
 
-                  for j=1:size(gdofs)[1]
-                      concMass[gdofs[j,:]] .+= val
-                  end
+            elseif data[i_data,2][1] == 'K'
+                nodeNum = data[i_data,1]
+                dof1 = data[i_data,3]
+                if length(data[1,:])==5 #If 6x6 general method
+                    dof2 = data[i_data,4]
+                elseif length(data[1,:])==4
+                    @warn "Only one degree of freedom given for concentrated stiffness; applying at diagonal."
+                    dof2 = data[i_data,3]
+                else
+                    error("Wrong number of inputs in the concentrated stiffness term.")
+                end
+                val = data[i_data,end]
+                gdof1 = (nodeNum-1)*6 + dof1
+                gdof2 = (nodeNum-1)*6 + dof2
+                concStiff[gdof1,gdof2] += val
+
+            elseif data[i_data,2][1] == 'C'
+                nodeNum = data[i_data,1]
+                dof1 = data[i_data,3]
+                if length(data[1,:])==5 #If 6x6 general method
+                    dof2 = data[i_data,4]
+                elseif length(data[1,:])==4
+                    @warn "Only one degree of freedom given for concentrated damping; applying at diagonal."
+                    dof2 = data[i_data,3]
+                else
+                    error("Wrong number of inputs in the concentrated damping term.")
+                end
+                val = data[i_data,end]
+                gdof1 = (nodeNum-1)*6 + dof1
+                gdof2 = (nodeNum-1)*6 + dof2
+                concDamp[gdof1,gdof2] += val
+
+            elseif data[i_data,2][1] == 'F'
+                nodeNum = data[i_data,1]
+                if length(data[1,:])==5
+                    @warn "Concentrated loads are one-dimensional, second degree of freedom input is ignored."
+                elseif length(data[1,:])!=4
+                    error("Wrong number of inputs in the concentrated load term.")
+                end
+                dof = data[i_data,3]
+                val = data[i_data,end]
+                gdof = (nodeNum-1)*numDOFPerNode + dof
+                concLoad[gdof] += val
+            else
+                error("Unknown Nodal Data Type")
+            end
+            if size(jointData)[1] > 0 # if there are joints in the model, apply joint mass to the concentrated mass for its master node
+                for i=1:size(jointData)[1]
+                    nodeNum = Int.(jointData[i,2])
+                    massdofs = [1 1; 2 2; 3 3] # the first three diagonal terms of the mass matrix are the pure mass at the node
+                    val = jointData[i,5]
+                    gdofs = Int.((nodeNum-1)*6 .+ massdofs)
+
+                    for j=1:size(gdofs)[1]
+                        concMass[gdofs[j,:]] .+= val
+                    end
+                end
             end
         end
     end
