@@ -534,19 +534,26 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
     O2dot = ODotel[2]
     O3dot = ODotel[3]
 
-    if (input.gravityOn)
-        g = 9.81 		  #gravitational acceleration [m/s^2]
-    else
-        g = 0.0
+    if eltype(feamodel.gravityOn) == Bool && feamodel.gravityOn == true
+        a_x_n = 0.0 #accelerations in inertial frame
+        a_y_n = 0.0
+        a_z_n = 9.81 # gravity
+    elseif eltype(feamodel.gravityOn) == Bool && feamodel.gravityOn == false
+        a_x_n = 0.0 #accelerations in inertial frame
+        a_y_n = 0.0
+        a_z_n = 0.0
+    end
+
+    if eltype(feamodel.gravityOn) == Float64
+        a_x_n = feamodel.gravityOn[1] #accelerations in inertial frame
+        a_y_n = feamodel.gravityOn[2]
+        a_z_n = feamodel.gravityOn[3]
     end
 
     a_x = accelVec[1] #acceleration of body in hub frame (from platform rigid body motion)
     a_y = accelVec[2]
     a_z = accelVec[3]
 
-    a_x_n = 0.0 #accelerations in inertial frame
-    a_y_n = 0.0
-    a_z_n = g
     a_temp = CN2H*[a_x_n; a_y_n; a_z_n]
 
     a_x = a_x + a_temp[1]

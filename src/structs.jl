@@ -64,7 +64,7 @@ Model inputs for FEA analysis, struct
 * `aeroElasticOn::Bool`: Include simplified flutter calculataions in the timoshenko element matrices
 * `guessFreq::float`: aeroelastic starting guess, only used if aeroElasticOn
 * `airDensity::float`: working fluid density
-* `gravityOn::Bool`: flag to include distributed gravity acceleration (9.81m/s) in the negative z-direction
+* `gravityOn::Bool orArray{<:float}`: vector of 3 or flag to include distributed gravity acceleration (9.81m/s) in the negative z-direction
 * `nlOn::Bool`: flag for solver to calculate deflection induced stiffness changes and associated convergance to the coupled solution
 * `spinUpOn::Bool`: flag to perform a static analysis (warm start) prior to performing modal analysis
 * `outFilename::string`: /path/to/desired/output/filename if it doesn't exist already it is created, if exists, is overwritten
@@ -327,7 +327,7 @@ mutable struct ElInput
     x
     y
     z
-    gravityOn #TODO: change this for gravity vector
+    gravityOn
     RayleighAlpha
     RayleighBeta
     accelVec
