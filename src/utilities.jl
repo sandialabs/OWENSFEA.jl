@@ -1195,6 +1195,8 @@ function applyBC(Kg,Fg,BC,numDofPerNode)
     numEq=size(Kg)[1]
 
     #APPLY BCs FOR PRIMARY VARIABLE
+    Kg_bounded = copy(Kg)
+    Fg_bounded = copy(Fg)
 
     if (BC.numpBC > 0)
         pBC = BC.pBC
@@ -1208,12 +1210,12 @@ function applyBC(Kg,Fg,BC,numDofPerNode)
             eqNumber = eqidx[i]#(nodeNumber-1)*numDofPerNode + dofNumber
 
             for j=1:numEq
-                Kg[eqNumber,j] = 0.0
-                Fg[j] = Fg[j] - Kg[j,eqNumber]*specVal
-                Kg[j,eqNumber] = 0.0
+                Kg_bounded[eqNumber,j] = 0.0
+                Fg_bounded[j] = Fg_bounded[j] - Kg_bounded[j,eqNumber]*specVal
+                Kg_bounded[j,eqNumber] = 0.0
             end
-            Fg[eqNumber] = specVal
-            Kg[eqNumber,eqNumber] = 1.0
+            Fg_bounded[eqNumber] = specVal
+            Kg_bounded[eqNumber,eqNumber] = 1.0
         end
     end
 
@@ -1230,11 +1232,11 @@ function applyBC(Kg,Fg,BC,numDofPerNode)
     #
     #         eqNumber = (nodeNumber-1)*numDofPerNode + dofNumber
     #
-    #         Fg(eqNumber) = Fg(eqNumber) + specVal
+    #         Fg_bounded(eqNumber) = Fg_bounded(eqNumber) + specVal
     #
     #     end
     # end
-    return Kg,Fg
+    return Kg_bounded,Fg_bounded
 end
 
 """
