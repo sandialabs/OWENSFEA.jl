@@ -79,6 +79,8 @@ Model inputs for FEA analysis, struct
 * `numNodes::int`: total number of nodes in the mesh
 * `numModes::int`: number of modes to calculate
 * `nlParams::NlParams`: optional there in case the Nlparams struct is passed in, should be cleaned up since redundant
+* `alpha::float64`: optional newmark beta alpha parameter,If TD, use 0.25
+* `gamma::float64`: optional newmark beta gamma parameter, if static, use 0. If hydro, use 1.0
 * `pBC::Array{<:float}`: Nx3 array consisting of node, local dof, specified displacement value for the boundary condition
 * `nodalTerms`: Concentrated nodal terms, should be replaced with the nodal input data array and the calc done internally
 * `iterationType::string`: FEA displacement update calculation, Newton Raphson "NR", Direct Iteration "DI"
@@ -115,6 +117,8 @@ function FEAModel(;analysisType = "TNB",
     numNodes = 0,
     numModes = 20,
     nlParams = 0,
+    alpha = 0.5,
+    gamma = 0.5,
     pBC = 0,
     nodalTerms = 0.0,
     iterationType = "NR",
@@ -148,7 +152,8 @@ function FEAModel(;analysisType = "TNB",
 
     if nlParams==0
         nlParams = NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
-        maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep,predef)
+        maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep,predef,
+        alpha,gamma)
     end
 
     return FEAModel(analysisType,initCond,aeroElasticOn,guessFreq,airDensity,
@@ -171,6 +176,8 @@ mutable struct NlParams
     minLoadStep
     prescribedLoadStep
     predef
+    alpha
+    gamma
 end
 #Convenience function
 NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,maxIterations,maxNumLoadSteps,

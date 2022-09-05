@@ -36,8 +36,8 @@ function TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,dispData,Omega,elStorage;
     if analysisType=="TNB"
         if timeInt == nothing
             #------ newmark integration parameters ---------
-            alpha = 0.5
-            gamma = 0.5
+            alpha = feamodel.nlParams.alpha
+        	gamma = feamodel.nlParams.gamma
             beta = 0.5*gamma
 
             a1 = alpha*delta_t
@@ -65,7 +65,7 @@ function TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,dispData,Omega,elStorage;
     elseif analysisType=="TD"
         if timeInt == nothing
             #------ dean integration parameters -------------
-            alpha = 0.25
+            alpha = feamodel.nlParams.alpha
 
             a1 = alpha*delta_t^2
             a2 = (1-2*alpha)*delta_t^2
@@ -164,8 +164,8 @@ function TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,dispData,Omega,elStorage;
 
         if feamodel.analysisType == "S"
             if iterationCount >=1
-                gamm = 0.0     #option for acceleration of iterative procedure (gamma = 0 or gamma=0.5 are typical)
-                disp = dispOld.*gamm + displ.*(1-gamm)
+                gamma = feamodel.nlParams.gamma     #option for acceleration of iterative procedure (gamma = 0 or gamma=0.5 are typical)
+                disp = dispOld.*gamma + displ.*(1-gamma)
                 firstIteration = false
             else
                 firstIteration = true

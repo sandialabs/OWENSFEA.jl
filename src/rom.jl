@@ -270,8 +270,8 @@ function  structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega,OmegaDo
 	###-------------------------------------------
 	analysisType = "M"
 	###------ newmark integration parameters ---------
-	alpha = 0.5
-	gamma = 0.5
+	alpha = feamodel.nlParams.alpha
+	gamma = feamodel.nlParams.gamma
 	beta = 0.5*gamma
 
 	delta_t = delta_t
@@ -354,7 +354,7 @@ function  structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega,OmegaDo
 		end
 		###------- end element calculation and assembly ------------------
 		##
-		
+
 		#Apply external loads to structure
 		for i=1:length(Fexternal)
 			Fg[Fdof[i]] = Fg[Fdof[i]] + Fexternal[i]
