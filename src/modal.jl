@@ -73,7 +73,7 @@ function  linearAnalysisModal(feamodel,mesh,el,displ,Omega,elStorage;returnDynMa
     Cg = zeros(totalNumDOF,totalNumDOF)
     eldisp = zeros(numNodesPerEl*numDOFPerNode)
 
-    nodalTerms,timeInt = TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,
+    timeInt = TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,
     displ,Omega,elStorage;Kg,Mg,Cg,countedNodes)
 
     # #apply general 6x6  mass, damping, and stiffness matrices to nodes

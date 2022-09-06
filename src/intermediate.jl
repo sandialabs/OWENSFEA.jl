@@ -255,5 +255,5 @@ function TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,dispData,Omega,elStorage;
             assemblyMatrixOnly(elOutput.Me,conn[i,:],numNodesPerEl,numDOFPerNode,Mg) #assemble Mg
         end
     end #for
-    return nodalTerms,timeInt
+    return timeInt
 end

@@ -98,7 +98,7 @@ function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,t
     elementOrder = feamodel.elementOrder
     numNodesPerEl = elementOrder + 1
     numDOFPerNode = 6
-    countedNodes = []
+
     totalNumDOF = mesh.numNodes * numDOFPerNode
     eldisp = zeros(numNodesPerEl*numDOFPerNode)
     eldisp_sm1 = zeros(numNodesPerEl*numDOFPerNode)
@@ -125,7 +125,8 @@ function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,t
 
         Kg = zero(Kg1)
         Fg = zero(Fg1)
-        nodalTerms,timeInt = TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,
+        countedNodes = []
+        timeInt = TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,
         dispData,Omega,elStorage;Kg,Fg,eldisp_sm1,eldispdot,eldispddot,eldispiter,rbData,CN2H,delta_t,
         OmegaDot,displ_im1,displdot_im1,displddot_im1,iterationCount,predef,countedNodes)
 
@@ -181,7 +182,7 @@ function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,t
 
     #Calculate reaction at turbine base (hardwired to node number 1)
     reactionNodeNumber = feamodel.platformTurbineConnectionNodeNumber
-
+    countedNodes = [] #TODO:??
     FReaction = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_im1,rbData,Omega,OmegaDot,CN2H,countedNodes)
     #Calculate strain
     elStrain = calculateStrainForElements(mesh.numEl,numNodesPerEl,numDOFPerNode,conn,feamodel.elementOrder,el,displ_im1,feamodel.nlOn)
