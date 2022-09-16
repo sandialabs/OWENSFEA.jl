@@ -9,7 +9,8 @@ timestart = time()
 L = 60 # m
 
 # create points
-nelem = 10
+nelem = 20
+global nelem_half = round(Int,nelem/2)
 x = range(0, L, length=nelem+1)
 y = zero(x)
 z = zero(x)
@@ -44,7 +45,7 @@ stiffness = fill(Diagonal([2.389e9,4.334e8,2.743e7,2.167e7,1.970e7,4.406e8]), ne
 mass = fill(Diagonal([258.053,258.053,258.053,48.59,2.172,46.418]), nelem)
 
 # create assembly of interconnected nonlinear beams
-# damping = fill([0.001,0.000,0.001,0.000,0.008,0.000], nelem)
+# damping = fill([0.005,0.000,0.005,0.000,0.008,0.000], nelem)
 damping = fill([0.005,0.005,0.005,0.005,0.005,0.005], nelem)
 assembly = Assembly(points, start, stop; stiffness=stiffness, mass=mass, damping)
 
@@ -76,8 +77,8 @@ function runOWENS()
     # Create Mesh
     mesh, ort, joint = mesh_beam(;L1 = L/2, #first section of beam length
     L2 = L/2, #second section of beam length
-    Nelem1 = 5,
-    Nelem2 = 5,
+    Nelem1 = nelem_half,
+    Nelem2 = nelem_half,
     angleD = 0.0, # angle of second section of beam relative to first (0 is straight)
     zeroOffset = 0.0,
     vertical = true)#r_b1[1]) #offset from 0 before first beam begins
