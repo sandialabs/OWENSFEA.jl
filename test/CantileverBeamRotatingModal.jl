@@ -30,7 +30,7 @@ sweepD = 45.0
 # straight section of the beam
 L_b1 = L/2 # inch
 r_b1 = [0.0, 0, 0]
-nelem_b1 = 20
+nelem_b1 = 5
 lengths_b1, xp_b1, xm_b1, Cab_b1 = discretize_beam(L_b1, r_b1, nelem_b1)
 
 # swept section of the beam
@@ -98,7 +98,7 @@ for j = 1:length(RPM)
     MV = system.M * V
 
     # process state and eigenstates
-    state = AssemblyState(system, assembly;
+    global state = AssemblyState(system, assembly;
     prescribed_conditions = prescribed_conditions)
     eigenstates = [AssemblyState(system, assembly, V[:,k];
         prescribed_conditions = prescribed_conditions) for k = 1:nev]
@@ -115,10 +115,10 @@ for j = 1:length(RPM)
     perm, corruption = correlate_eigenmodes(C)
 
     # re-arrange eigenvalues and eigenvectors
-    λ2 = λ2[perm]
+    global λ2 = λ2[perm]
     # U = U[perm,:]
     # MV = MV[:,perm]
-    # eigenstates = eigenstates[perm]
+    global eigenstates = eigenstates[perm]
     #
     # # update previous eigenvector matrix
     # U_p .= U
@@ -129,6 +129,11 @@ for j = 1:length(RPM)
     freqGXBeam[j,:] = [imag(λ2[k])/(2*pi) for k = 1:2:nev]
 end
 # println(freqGXBeam)
+
+
+# GXBeam.write_vtk("rotating-eigenmode5", assembly, state,
+# λ2[end-2], eigenstates[end-2]; mode_scaling = 100000.0)
+
 
 #These should match the FEA case from https://autofem.com/examples/determining_natural_frequencie.html
 # with frequencies of 67, 418, 1157
@@ -235,37 +240,37 @@ for i = 1:length(RPM)
         @test isapprox(freqGXBeam[i,j], freqOWENS[i,j];atol)
     end
 end
-#
-# ###############################################
-# ######## PLOT
-# ###############################################
-# import PyPlot
-# PyPlot.ion()
-# PyPlot.rc("figure", figsize=(4, 3))
-# PyPlot.rc("font", size=10.0)
-# PyPlot.rc("lines", linewidth=1.5)
-# PyPlot.rc("lines", markersize=3.0)
-# PyPlot.rc("legend", frameon=false)
-# PyPlot.rc("axes.spines", right=false, top=false)
-# PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
-# # rc("axes", color_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
-# plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
-#
-#
-# PyPlot.figure()
-# for i=1:3:18
-#     linex=[RPM[1], RPM[end]+10]
-#     liney=[RPM[1], RPM[end]+10].*i./60.0
-#     PyPlot.plot(linex,liney,"--k",linewidth=0.5)
-#     PyPlot.annotate("$i P",xy=(0.95*linex[2],liney[2]+.05+(i-1)*.01))
-# end
-# for i = 1:Int(nev/2)
-#     PyPlot.plot(RPM,freqGXBeam[:,i],color=plot_cycle[2])
-#     PyPlot.plot(RPM,freqOWENS[:,i],color=plot_cycle[1])
-# end
-# PyPlot.plot(0,0,color=plot_cycle[2],label="GXBeam")
-# PyPlot.plot(0,0,color=plot_cycle[1],label="OWENS")
-# PyPlot.xlabel("RPM")
-# PyPlot.ylabel("Frequency (Hz)")
-# PyPlot.legend(loc=(0.05,0.68))
+
+###############################################
+######## PLOT
+###############################################
+import PyPlot
+PyPlot.ion()
+PyPlot.rc("figure", figsize=(4, 3))
+PyPlot.rc("font", size=10.0)
+PyPlot.rc("lines", linewidth=1.5)
+PyPlot.rc("lines", markersize=3.0)
+PyPlot.rc("legend", frameon=false)
+PyPlot.rc("axes.spines", right=false, top=false)
+PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
+# rc("axes", color_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
+plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
+
+
+PyPlot.figure()
+for i=1:3:18
+    linex=[RPM[1], RPM[end]+10]
+    liney=[RPM[1], RPM[end]+10].*i./60.0
+    PyPlot.plot(linex,liney,"--k",linewidth=0.5)
+    PyPlot.annotate("$i P",xy=(0.95*linex[2],liney[2]+.05+(i-1)*.01))
+end
+for i = 1:Int(nev/2)
+    PyPlot.plot(RPM,freqGXBeam[:,i],color=plot_cycle[2])
+    PyPlot.plot(RPM,freqOWENS[:,i],color=plot_cycle[1])
+end
+PyPlot.plot(0,0,color=plot_cycle[2],label="GXBeam")
+PyPlot.plot(0,0,color=plot_cycle[1],label="OWENS")
+PyPlot.xlabel("RPM")
+PyPlot.ylabel("Frequency (Hz)")
+PyPlot.legend(loc=(0.05,0.68))
 # PyPlot.savefig("rotating_modal.pdf",transparent = true)

@@ -135,7 +135,8 @@ function FEAModel(;analysisType = "TNB",
         jointTransform, reducedDOFList = GyricFEA.createJointTransform(joint,numNodes,numDOFPerNode) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
     end
     if nodalTerms == 0.0
-        nodalTerms = GyricFEA.readNodalTerms() #Fill in the data structure with nothing
+        # nodalTerms = GyricFEA.readNodalTerms() #Fill in the data structure with nothing
+        nodalTerms = applyConcentratedTerms(numNodes, numDOFPerNode)
     end
 
     if pBC!=0

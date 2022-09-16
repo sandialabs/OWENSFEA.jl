@@ -81,14 +81,14 @@ function  linearAnalysisModal(feamodel,mesh,el,displ,Omega,elStorage;returnDynMa
 
     #----------------------------------------------------------------------
     #APPLY CONSTRAINT
-    Kg = applyConstraints(Kg_all,feamodel.jointTransform)  #modify global matrices for joint constraints using joint transform
-    Mg = applyConstraints(Mg_all,feamodel.jointTransform)
-    Cg = applyConstraints(Cg_all,feamodel.jointTransform)
+    Kg_con = applyConstraints(Kg,feamodel.jointTransform)  #modify global matrices for joint constraints using joint transform
+    Mg_con = applyConstraints(Mg,feamodel.jointTransform)
+    Cg_con = applyConstraints(Cg,feamodel.jointTransform)
 
     #APPLY BOUNDARY CONDITIONS
-    KgTotal = applyBCModal(Kg,feamodel.BC.numpBC,feamodel.BC.map)     #apply boundary conditions to global matrices
-    MgTotal = applyBCModal(Mg,feamodel.BC.numpBC,feamodel.BC.map)
-    CgTotal = applyBCModal(Cg,feamodel.BC.numpBC,feamodel.BC.map)
+    KgTotal = applyBCModal(Kg_con,feamodel.BC.numpBC,feamodel.BC.map)     #apply boundary conditions to global matrices
+    MgTotal = applyBCModal(Mg_con,feamodel.BC.numpBC,feamodel.BC.map)
+    CgTotal = applyBCModal(Cg_con,feamodel.BC.numpBC,feamodel.BC.map)
 
     if Omega==0.0 #set eigensolver flag
         solveFlag = 2
@@ -98,16 +98,16 @@ function  linearAnalysisModal(feamodel,mesh,el,displ,Omega,elStorage;returnDynMa
     # eigVec,eigVal = eigSolve(MgTotal,CgTotal,KgTotal)#,... #eigensolve of global system
     if returnDynMatrices==true
         #save them to a file
-        KgTotalU,_ = applyBC(Kg,zeros(length(Kg[:,1])),feamodel.BC,numDOFPerNode)
-        MgTotalU,_ = applyBC(Mg,zeros(length(Mg[:,1])),feamodel.BC,numDOFPerNode)
-        CgTotalU,_ = applyBC(Cg,zeros(length(Cg[:,1])),feamodel.BC,numDOFPerNode)
+        KgTotalU,_ = applyBC(Kg_con,zeros(length(Kg[:,1])),feamodel.BC,numDOFPerNode)
+        MgTotalU,_ = applyBC(Mg_con,zeros(length(Mg[:,1])),feamodel.BC,numDOFPerNode)
+        CgTotalU,_ = applyBC(Cg_con,zeros(length(Cg[:,1])),feamodel.BC,numDOFPerNode)
 
         filename = "./linearized_matrices.mat"
         println("Saving linearized matrices to: $filename")
         file = MAT.matopen(filename,"w")
-        MAT.write(file,"Kg_all",Kg_all)
-        MAT.write(file,"Mg_all",Mg_all)
-        MAT.write(file,"Cg_all",Cg_all)
+        MAT.write(file,"Kg_all",Kg)
+        MAT.write(file,"Mg_all",Mg)
+        MAT.write(file,"Cg_all",Cg)
         MAT.write(file,"KgTotalU",KgTotalU)
         MAT.write(file,"MgTotalU",MgTotalU)
         MAT.write(file,"CgTotalU",CgTotalU)

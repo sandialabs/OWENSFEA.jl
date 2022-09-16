@@ -85,7 +85,7 @@ function runme(islinear)
     deformedxyz = zeros(length(points),3,length(RPM))
 
     for i = 1:length(RPM)
-        system = System(assembly,true)
+        system = System(assembly)
         w0 = [0, 0, RPM[i]*(2*pi)/60]
         # create dictionary of prescribed conditions
         prescribed_conditions = Dict(
@@ -372,7 +372,7 @@ _, _, _, _, deformedxyz_nl,_,Ux_beam_nl, uHist_nl,_,Uy_beam_nl,Uz_beam_nl = runm
 #     PyPlot.ylabel("y-position (m)")
 #     PyPlot.axis("equal")
 #     PyPlot.xlim([0,0.5])
-#     PyPlot.savefig("./rotating_$iload.pdf",transparent = true)
+#     # PyPlot.savefig("./rotating_$iload.pdf",transparent = true)
 # end
 #
 # PyPlot.rc("figure.subplot", left=.2, bottom=.19, top=0.9, right=.9)
@@ -385,7 +385,7 @@ _, _, _, _, deformedxyz_nl,_,Ux_beam_nl, uHist_nl,_,Uy_beam_nl,Uz_beam_nl = runm
 # PyPlot.xlabel("RPM")
 # PyPlot.ylabel("Tip Deflection (m)")
 # PyPlot.legend()
-# PyPlot.savefig("./tipDeflection.pdf",transparent = true)
+# # PyPlot.savefig("./tipDeflection.pdf",transparent = true)
 
 ###############################################
 ######## TEST

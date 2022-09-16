@@ -70,7 +70,7 @@ function mesh_beam(;L1 = 31.5, #first section of beam length
     structuralElNumbers = []
     # end
 
-    mymesh = GyricFEA.Mesh(nodeNum,numEl,numNodes,mesh_x,mesh_y,mesh_z,elNum,conn,meshtype,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers)
+    mymesh = GyricFEA.Mesh(round.(Int,nodeNum),round.(Int,numEl),round.(Int,numNodes),mesh_x,mesh_y,mesh_z,round.(Int,elNum),round.(Int,conn),meshtype,meshSeg,structuralSpanLocNorm,round.(Int,structuralNodeNumbers),round.(Int,structuralElNumbers))
 
     ####################################
     ##----------Joint Matrix----------##

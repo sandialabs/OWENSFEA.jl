@@ -66,7 +66,7 @@ assembly = Assembly(points, start, stop;
     lengths = lengths,
     midpoints = xm)
 
-system = System(assembly,false)
+system = System(assembly)
 # create dictionary of prescribed conditions
 prescribed_conditions = Dict(
 # fixed left side
@@ -210,4 +210,6 @@ end
 for ifreq = 1:3
     atol = freqAnalytical[ifreq]*0.05 #5%
     @test isapprox(freqOWENS2D[ifreq],freqAnalytical[ifreq];atol)
+    # println(freqOWENS2D[ifreq])
+    # println("error = $((freqOWENS2D[ifreq]-freqAnalytical[ifreq])/freqAnalytical[ifreq]*100)")
 end
