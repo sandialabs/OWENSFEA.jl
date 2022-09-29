@@ -1741,7 +1741,7 @@ Internal, applies 6x6 concentrated nodal terms from user input.
 #Output
 * `nodalTerms::NodalTerms`: see ?NodalTerms object containing concentrated nodal data
 """
-function applyConcentratedTerms(numNodes, numDOFPerNode; filename="none",data=[], jointData=[])
+function applyConcentratedTerms(numNodes, numDOFPerNode; filename="none",data=[], jointData=[],applyTop2Bot=false)
 
     if filename!="none" && !occursin("[",filename)
         data = DelimitedFiles.readdlm(filename,' ',skipstart = 0)
@@ -1820,7 +1820,11 @@ function applyConcentratedTerms(numNodes, numDOFPerNode; filename="none",data=[]
                     nodeNum = Int.(jointData[i,2])
                     massdofs = [1 1; 2 2; 3 3] # the first three diagonal terms of the mass matrix are the pure mass at the node
                     val = jointData[i,5]
-                    gdofs = Int.((nodeNum-1)*6 .+ massdofs)
+                    if applyTop2Bot
+                        gdofs = massdofs
+                    else
+                        gdofs = Int.((nodeNum-1)*6 .+ massdofs)
+                    end
 
                     for j=1:size(gdofs)[1]
                         concMass[gdofs[j,:]] .+= val
