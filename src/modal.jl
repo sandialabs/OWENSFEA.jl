@@ -47,13 +47,13 @@ function modal(feamodel,mesh,el;Omega=0.0,displ=zeros(mesh.numNodes*6),OmegaStar
 
     if staticAnalysisSuccessful
         freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,
-        U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90= linearAnalysisModal(feamodel,
+        U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90,eigVal,eigVec= linearAnalysisModal(feamodel,
         mesh,el,displ,Omega,elStorage;returnDynMatrices) #performs modal analysis
     else
         error("Static analysis unsuccessful. Exiting")
     end
     return freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,
-    U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90,displ
+    U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90,displ,eigVal,eigVec
 end
 
 """
@@ -153,7 +153,7 @@ function  linearAnalysisModal(feamodel,mesh,el,displ,Omega,elStorage;returnDynMa
         freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90 = ModalOutput(freq,damp,phase1,phase2,imagCompSign,feamodel.outFilename)
     end
 
-    return freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
+    return freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90,eigVal,eigVec
 
 end
 

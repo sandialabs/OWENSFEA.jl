@@ -44,7 +44,7 @@ function initialElementCalculations(feamodel,el,mesh)
         end
 
         #get concentrated terms associated with element # TODO: This is redundant and can probably be cleaned up, and might mess up double counting?
-        _, massConc, _, _, countedNodes = getElementConcTerms!(feamodel.nodalTerms.concStiff, feamodel.nodalTerms.concMass, feamodel.nodalTerms.concDamp, feamodel.nodalTerms.concLoad, mesh.conn[i,:], numDOFPerNode, countedNodes)
+        _, massConc, _, _, countedNodes = getElementConcTerms!(feamodel.nodalTerms.concStiff, feamodel.nodalTerms.concMass, feamodel.nodalTerms.concDamp, feamodel.nodalTerms.concLoad, Int.(mesh.conn[i,:]), numDOFPerNode, countedNodes)
 
         concMassFlag = !isempty(findall(x->x!=0,massConc))
 
