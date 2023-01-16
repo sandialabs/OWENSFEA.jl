@@ -44,7 +44,9 @@
     - julia -e 'using Pkg; Pkg.add("Coverage");
       import GyricFEA; cd(joinpath(dirname(pathof(GyricFEA)), ".."));
       using Coverage; cl, tl = get_summary(process_folder());
-      println("(", cl/tl*100, "%) covered")'
+      println("", cl/tl*100," covered")'
+  coverage: '/\d+\.\d+ covered/'
+
 
 # Name a test and select an appropriate image.
 # images comes from Docker hub
