@@ -241,36 +241,36 @@ for i = 1:length(RPM)
     end
 end
 
-###############################################
-######## PLOT
-###############################################
-import PyPlot
-PyPlot.ion()
-PyPlot.rc("figure", figsize=(4, 3))
-PyPlot.rc("font", size=10.0)
-PyPlot.rc("lines", linewidth=1.5)
-PyPlot.rc("lines", markersize=3.0)
-PyPlot.rc("legend", frameon=false)
-PyPlot.rc("axes.spines", right=false, top=false)
-PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
-# rc("axes", color_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
-plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
+# ###############################################
+# ######## PLOT
+# ###############################################
+# import PyPlot
+# PyPlot.ion()
+# PyPlot.rc("figure", figsize=(4, 3))
+# PyPlot.rc("font", size=10.0)
+# PyPlot.rc("lines", linewidth=1.5)
+# PyPlot.rc("lines", markersize=3.0)
+# PyPlot.rc("legend", frameon=false)
+# PyPlot.rc("axes.spines", right=false, top=false)
+# PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
+# # rc("axes", color_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
+# plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 
 
-PyPlot.figure()
-for i=1:3:18
-    linex=[RPM[1], RPM[end]+10]
-    liney=[RPM[1], RPM[end]+10].*i./60.0
-    PyPlot.plot(linex,liney,"--k",linewidth=0.5)
-    PyPlot.annotate("$i P",xy=(0.95*linex[2],liney[2]+.05+(i-1)*.01))
-end
-for i = 1:Int(nev/2)
-    PyPlot.plot(RPM,freqGXBeam[:,i],color=plot_cycle[2])
-    PyPlot.plot(RPM,freqOWENS[:,i],color=plot_cycle[1])
-end
-PyPlot.plot(0,0,color=plot_cycle[2],label="GXBeam")
-PyPlot.plot(0,0,color=plot_cycle[1],label="OWENS")
-PyPlot.xlabel("RPM")
-PyPlot.ylabel("Frequency (Hz)")
-PyPlot.legend(loc=(0.05,0.68))
-# PyPlot.savefig("rotating_modal.pdf",transparent = true)
+# PyPlot.figure()
+# for i=1:3:18
+#     linex=[RPM[1], RPM[end]+10]
+#     liney=[RPM[1], RPM[end]+10].*i./60.0
+#     PyPlot.plot(linex,liney,"--k",linewidth=0.5)
+#     PyPlot.annotate("$i P",xy=(0.95*linex[2],liney[2]+.05+(i-1)*.01))
+# end
+# for i = 1:Int(nev/2)
+#     PyPlot.plot(RPM,freqGXBeam[:,i],color=plot_cycle[2])
+#     PyPlot.plot(RPM,freqOWENS[:,i],color=plot_cycle[1])
+# end
+# PyPlot.plot(0,0,color=plot_cycle[2],label="GXBeam")
+# PyPlot.plot(0,0,color=plot_cycle[1],label="OWENS")
+# PyPlot.xlabel("RPM")
+# PyPlot.ylabel("Frequency (Hz)")
+# PyPlot.legend(loc=(0.05,0.68))
+# # PyPlot.savefig("rotating_modal.pdf",transparent = true)

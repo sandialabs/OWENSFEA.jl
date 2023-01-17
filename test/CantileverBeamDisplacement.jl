@@ -457,16 +457,16 @@ _, _, _, deformedxyz_nl,_,Ux_beam_nl, uHist_nl,_,epsilon_x_hist,epsilon_y_hist,e
 
 deformFact = 1
 L = 0.5
-import PyPlot
-PyPlot.close("all")
-PyPlot.rc("figure", figsize=(4, 3))
-PyPlot.rc("font", size=10.0)
-PyPlot.rc("lines", linewidth=1.5)
-PyPlot.rc("lines", markersize=3.0)
-PyPlot.rc("legend", frameon=false)
-PyPlot.rc("axes.spines", right=false, top=false)
-PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
-plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
+# import PyPlot
+# PyPlot.close("all")
+# PyPlot.rc("figure", figsize=(4, 3))
+# PyPlot.rc("font", size=10.0)
+# PyPlot.rc("lines", linewidth=1.5)
+# PyPlot.rc("lines", markersize=3.0)
+# PyPlot.rc("legend", frameon=false)
+# PyPlot.rc("axes.spines", right=false, top=false)
+# PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
+# plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 
 
 for iload = 1:length(P)
@@ -479,19 +479,19 @@ for iload = 1:length(P)
     Uy_nl = uHist_nl[iload,2:6:end,end]
     Uz_nl = uHist_nl[iload,3:6:end,end]
 
-    PyPlot.figure()
-    PyPlot.title("Load: $(P[iload]) N")
-    PyPlot.plot(meshx./L,meshz./L,"k-",label="Undeformed")
-    PyPlot.plot((pointvec[:,3]+deformedxyz[:,3,iload]*deformFact)./L,(pointvec[:,1]+deformedxyz[:,1,iload]*deformFact)./L,"-",color=plot_cycle[2],label="GXBeam")
-    PyPlot.plot((meshx+Ux*deformFact)./L,(meshz+Uz*deformFact)./L,"-",color=plot_cycle[1],label="OWENS")
-    PyPlot.plot((pointvec[:,3]+deformedxyz_nl[:,3,iload]*deformFact)./L,(pointvec[:,1]+deformedxyz_nl[:,1,iload]*deformFact)./L,"--",color=plot_cycle[2],label="GXBeam Nonlinear")
-    PyPlot.plot((meshx+Ux_nl*deformFact)./L,(meshz+Uz_nl*deformFact)./L,"--",color=plot_cycle[1],label="OWENS Nonlinear")
-    PyPlot.legend()
-    PyPlot.xlabel("x/L")
-    PyPlot.ylabel("y/L")
-    PyPlot.axis("equal")
-    PyPlot.xlim([0,0.5])
-    PyPlot.savefig("./deformedmesh_$iload.pdf",transparent = true)
+    # PyPlot.figure()
+    # PyPlot.title("Load: $(P[iload]) N")
+    # PyPlot.plot(meshx./L,meshz./L,"k-",label="Undeformed")
+    # PyPlot.plot((pointvec[:,3]+deformedxyz[:,3,iload]*deformFact)./L,(pointvec[:,1]+deformedxyz[:,1,iload]*deformFact)./L,"-",color=plot_cycle[2],label="GXBeam")
+    # PyPlot.plot((meshx+Ux*deformFact)./L,(meshz+Uz*deformFact)./L,"-",color=plot_cycle[1],label="OWENS")
+    # PyPlot.plot((pointvec[:,3]+deformedxyz_nl[:,3,iload]*deformFact)./L,(pointvec[:,1]+deformedxyz_nl[:,1,iload]*deformFact)./L,"--",color=plot_cycle[2],label="GXBeam Nonlinear")
+    # PyPlot.plot((meshx+Ux_nl*deformFact)./L,(meshz+Uz_nl*deformFact)./L,"--",color=plot_cycle[1],label="OWENS Nonlinear")
+    # PyPlot.legend()
+    # PyPlot.xlabel("x/L")
+    # PyPlot.ylabel("y/L")
+    # PyPlot.axis("equal")
+    # PyPlot.xlim([0,0.5])
+    # PyPlot.savefig("./deformedmesh_$iload.pdf",transparent = true)
 
     # # Strain
     # epsilon_x1 = epsilon_x_hist[iload,1,:,end]
@@ -605,13 +605,13 @@ for iload = 1:length(P)
     # PyPlot.ylabel("strain kappa_z")
 end
 
-PyPlot.figure()
-PyPlot.plot(P,dispAnalytical,"k",label="Analytical (Linear)")
-PyPlot.plot(P,deformedxyz[end,3,:],color=plot_cycle[2],label="GXBeam")
-PyPlot.plot(P,Ux_beam,color=plot_cycle[1],label="OWENS")
-PyPlot.plot(P,deformedxyz_nl[end,3,:],"--",color=plot_cycle[2],label="GXBeam Nonlinear")
-PyPlot.plot(P,Ux_beam_nl,"--",color=plot_cycle[1],label="OWENS Nonlinear")
-PyPlot.xlabel("Load (N)")
-PyPlot.ylabel("Tip Deflection (M)")
-PyPlot.legend()
-# PyPlot.savefig("./beamTipDeflec.pdf",transparent = true)
+# PyPlot.figure()
+# PyPlot.plot(P,dispAnalytical,"k",label="Analytical (Linear)")
+# PyPlot.plot(P,deformedxyz[end,3,:],color=plot_cycle[2],label="GXBeam")
+# PyPlot.plot(P,Ux_beam,color=plot_cycle[1],label="OWENS")
+# PyPlot.plot(P,deformedxyz_nl[end,3,:],"--",color=plot_cycle[2],label="GXBeam Nonlinear")
+# PyPlot.plot(P,Ux_beam_nl,"--",color=plot_cycle[1],label="OWENS Nonlinear")
+# PyPlot.xlabel("Load (N)")
+# PyPlot.ylabel("Tip Deflection (M)")
+# PyPlot.legend()
+# # PyPlot.savefig("./beamTipDeflec.pdf",transparent = true)

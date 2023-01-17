@@ -290,15 +290,15 @@ A_analy = 4*1e5/(0.14*L) * sqrt(Wn) / (rhoA / EIyy)^0.25
 println("Time GXBeam: $elapsedGX")
 println("Time OWENS: $elapsedOW")
 println("GXBeam is $(elapsedOW/elapsedGX) x faster than OWENS")
-import PyPlot
-PyPlot.ion()
-PyPlot.rc("figure", figsize=(4, 3))
-PyPlot.rc("font", size=10.0)
-PyPlot.rc("lines", linewidth=1.5)
-PyPlot.rc("lines", markersize=3.0)
-PyPlot.rc("legend", frameon=false)
-PyPlot.rc("axes.spines", right=false, top=false)
-PyPlot.rc("figure.subplot", left=.25, bottom=.17, top=0.9, right=.9)
+# import PyPlot
+# PyPlot.ion()
+# PyPlot.rc("figure", figsize=(4, 3))
+# PyPlot.rc("font", size=10.0)
+# PyPlot.rc("lines", linewidth=1.5)
+# PyPlot.rc("lines", markersize=3.0)
+# PyPlot.rc("legend", frameon=false)
+# PyPlot.rc("axes.spines", right=false, top=false)
+# PyPlot.rc("figure.subplot", left=.25, bottom=.17, top=0.9, right=.9)
 # rc("axes", color_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
 plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 point = vcat(fill(nelem+1, 6), fill(1, 6))
@@ -311,11 +311,11 @@ ylabel = ["\$u_x\$ (\$m\$)", "\$u_y\$ (\$m\$)", "\$u_z\$ (\$m\$)",
 "\$F_x\$ (\$N\$)", "\$F_y\$ (\$N\$)", "\$F_z\$ (\$N\$)",
 "\$M_x\$ (\$Nm\$)", "\$M_y\$ (\$Nm\$)", "\$M_z\$ (\$N\$)"]
 
-PyPlot.close("all")
+# PyPlot.close("all")
 
 for i = [7,9,11]#7:12
     # i = 7
-    PyPlot.figure(i)
+    # PyPlot.figure(i)
     y = [getproperty(state.points[point[i]], field[i])[direction[i]] for state in history]
 
     if field[i] == :theta
@@ -329,9 +329,9 @@ for i = [7,9,11]#7:12
         y .= -y
     end
 
-    PyPlot.plot(t, y, color = plot_cycle[2], label = "GXBeam")
+    # PyPlot.plot(t, y, color = plot_cycle[2], label = "GXBeam")
     if i == 7
-        PyPlot.plot(t,-Fn_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# N")
+        # PyPlot.plot(t,-Fn_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# N")
         # PyPlot.ylim([-7e6,7e6])
         myerror = sum(abs.(-Fn_beam[1:end-1]-y))./sum(abs.(y))
         # @test myerror < 0.9
@@ -345,10 +345,10 @@ for i = [7,9,11]#7:12
         std_gx = std(y)
         println("std Difference: $((std_gx-std_owens)/std_owens*100) %")
     elseif i == 8
-        PyPlot.plot(t,Fz_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# Z")
+        # PyPlot.plot(t,Fz_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# Z")
         myerror = sum(abs.(-Fn_beam[1:end-1]-y))./sum(abs.(y))
     elseif i == 9
-        PyPlot.plot(t,Ft_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# T")
+        # PyPlot.plot(t,Ft_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# T")
         # PyPlot.ylim([-3e6,3e6])
         myerror = sum(abs.(-Ft_beam[1:end-1]-y))./sum(abs.(y))
         # @test myerror < 3.3
@@ -362,10 +362,10 @@ for i = [7,9,11]#7:12
         std_gx = std(y)
         println("std Difference: $((std_gx-std_owens)/std_owens*100) %")
     elseif i == 10
-        PyPlot.plot(t,Mcurv_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# Mcurv")
+        # PyPlot.plot(t,Mcurv_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# Mcurv")
         myerror = sum(abs.(-Mcurv_beam[1:end-1]-y))./sum(abs.(y))
     elseif i == 11
-        PyPlot.plot(t,M25_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# M25")
+        # PyPlot.plot(t,M25_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# M25")
         # PyPlot.ylim([-4e6,4e6])
         myerror = sum(abs.(-M25_beam[1:end-1]-y))./sum(abs.(y))
         # @test myerror < 1.8
@@ -379,14 +379,14 @@ for i = [7,9,11]#7:12
         std_gx = std(y)
         println("std Difference: $((std_gx-std_owens)/std_owens*100) %")
     elseif i == 12
-        PyPlot.plot(t,Msweep_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# Msweep")
+        # PyPlot.plot(t,Msweep_beam[1:end-1], color = plot_cycle[1], label = "OWENS")# Msweep")
         myerror = sum(abs.(-Fn_beam[1:end-1]-y))./sum(abs.(y))
     end
-    PyPlot.xlim([0, 2.0])
-    PyPlot.xticks(collect(0:0.5:2.0))
-    PyPlot.xlabel("Time (s)")
-    PyPlot.ylabel(ylabel[i])
-    PyPlot.legend()
-    PyPlot.savefig("./Unsteady$(ylabel[i]).pdf",transparent = true)
+    # PyPlot.xlim([0, 2.0])
+    # PyPlot.xticks(collect(0:0.5:2.0))
+    # PyPlot.xlabel("Time (s)")
+    # PyPlot.ylabel(ylabel[i])
+    # PyPlot.legend()
+    # PyPlot.savefig("./Unsteady$(ylabel[i]).pdf",transparent = true)
 
 end

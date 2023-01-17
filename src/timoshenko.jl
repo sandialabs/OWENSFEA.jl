@@ -796,39 +796,45 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
     K66 = elStorage.K66
 
     if predef == "use"
-        K21 = elStorage.K21NLpredef
-        K12 = elStorage.K12NLpredef
-        K31 = elStorage.K31NLpredef
-        K13 = elStorage.K13NLpredef
-        K22 = elStorage.K22NLpredef
-        K23 = elStorage.K23NLpredef
-        K33 = elStorage.K33NLpredef
+        K21Pre = elStorage.K21NLpredef
+        K12Pre = elStorage.K12NLpredef
+        K31Pre = elStorage.K31NLpredef
+        K13Pre = elStorage.K13NLpredef
+        K22Pre = elStorage.K22NLpredef
+        K23Pre = elStorage.K23NLpredef
+        K33Pre = elStorage.K33NLpredef
+    else
+        K21Pre = zeros(size(K11))
+        K12Pre = zeros(size(K11))
+        K31Pre = zeros(size(K11))
+        K13Pre = zeros(size(K11))
+        K22Pre = zeros(size(K11))
+        K23Pre = zeros(size(K11))
+        K33Pre = zeros(size(K11))
     end
 
     if useDisp #modify stiffness matrices to account for nonlinear effects
-        K21 = K12' + 2*K12NL'
-        K12 = K12 + K12NL
-        K31 = K13' + 2*K13NL'
-        K13 = K13 + K13NL
-        K22 = K22 + K22NL
-        K23 = K23 + K23NL
-        K33 = K33 + K33NL
-
-        if predef == "update"
-            elStorage.K21NLpredef = K21
-            elStorage.K12NLpredef = K12
-            elStorage.K31NLpredef = K31
-            elStorage.K13NLpredef = K13
-            elStorage.K22NLpredef = K22
-            elStorage.K23NLpredef = K23
-            elStorage.K33NLpredef = K33
-        end
-
-    elseif predef == nothing
+        K21 = K12' + 2*K12NL' + K21Pre
+        K12 = K12 + K12NL + K12Pre
+        K31 = K13' + 2*K13NL' + K31Pre
+        K13 = K13 + K13NL + K13Pre
+        K22 = K22 + K22NL + K22Pre
+        K23 = K23 + K23NL + K23Pre
+        K33 = K33 + K33NL + K33Pre
+    elseif useDisp == false && predef != "use"
         K21 = K12'
         K31 = K13'
     end
 
+    if predef == "update"
+        elStorage.K21NLpredef = collect(K21)
+        elStorage.K12NLpredef = collect(K12)
+        elStorage.K31NLpredef = collect(K31)
+        elStorage.K13NLpredef = collect(K13)
+        elStorage.K22NLpredef = collect(K22)
+        elStorage.K23NLpredef = collect(K23)
+        elStorage.K33NLpredef = collect(K33)
+    end
 
     # Only used if (useDisp)
     K12hat  = K12
