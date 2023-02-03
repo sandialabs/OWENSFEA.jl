@@ -824,6 +824,14 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
     elseif useDisp == false && predef != "use"
         K21 = K12'
         K31 = K13'
+    else
+        K21 = K12' + K21Pre
+        K12 = K12 + K12Pre
+        K31 = K13' + K31Pre
+        K13 = K13 + K13Pre
+        K22 = K22 + K22Pre
+        K23 = K23 + K23Pre
+        K33 = K33 + K33Pre
     end
 
     if predef == "update"

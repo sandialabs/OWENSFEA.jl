@@ -181,9 +181,21 @@ function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,t
     end #While
 
     #Calculate reaction at turbine base (hardwired to node number 1)
-    reactionNodeNumber = feamodel.platformTurbineConnectionNodeNumber
-    countedNodes = [] #TODO:??
-    FReaction = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_im1,rbData,Omega,OmegaDot,CN2H,countedNodes)
+    if feamodel.return_all_reaction_forces
+        FReaction = zeros(mesh.numNodes*6)
+        for reactionNodeNumber = 1:mesh.numNodes
+            try
+                countedNodes = [] #TODO:??
+                FReaction[(reactionNodeNumber-1)*6+1:reactionNodeNumber*6] = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_im1,rbData,Omega,OmegaDot,CN2H,countedNodes)
+            catch
+                # This is where a joint is println(reactionNodeNumber)
+            end
+        end
+    else
+        reactionNodeNumber = feamodel.platformTurbineConnectionNodeNumber
+        countedNodes = [] #TODO:??
+        FReaction = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_im1,rbData,Omega,OmegaDot,CN2H,countedNodes)
+    end
     #Calculate strain
     elStrain = calculateStrainForElements(mesh.numEl,numNodesPerEl,numDOFPerNode,conn,feamodel.elementOrder,el,displ_im1,feamodel.nlOn)
     if (iterationCount>=maxIterations)

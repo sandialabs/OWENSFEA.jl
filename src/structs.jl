@@ -19,6 +19,7 @@ mutable struct FEAModel
     BC
     nodalTerms
     numModes
+    return_all_reaction_forces
 end
 
 # this way you can use defaults and pass in what is different, and it's mapped
@@ -54,7 +55,8 @@ end
         maxNumLoadSteps = 20,
         minLoadStepDelta = 0.0500,
         minLoadStep = 0.0500,
-        prescribedLoadStep = 0.0)
+        prescribedLoadStep = 0.0,
+        return_all_reaction_forces = false)
 
 Model inputs for FEA analysis, struct
 
@@ -92,6 +94,7 @@ Model inputs for FEA analysis, struct
 * `minLoadStep`: used in static (steady state) analysis
 * `prescribedLoadStep`: used in static (steady state) analysis
 * `predef::Bool`: will update the elStorage array if passed into Unsteady() with the nonlinear strain stiffening, to be used for subsequent analyses
+* `return_all_reaction_forces::Bool` = return a 2D array of all reaction forces at all timesteps as opposed to the reaction force at a single point.
 
 # Outputs:
 * `none`:
@@ -129,7 +132,8 @@ function FEAModel(;analysisType = "TNB",
     minLoadStepDelta = 0.0500,
     minLoadStep = 0.0500,
     prescribedLoadStep = 0.0,
-    predef = false)
+    predef = false,
+    return_all_reaction_forces = false)
 
     if jointTransform==0.0
         jointTransform, reducedDOFList = GyricFEA.createJointTransform(joint,numNodes,numDOFPerNode) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
@@ -159,7 +163,7 @@ function FEAModel(;analysisType = "TNB",
 
     return FEAModel(analysisType,initCond,aeroElasticOn,guessFreq,airDensity,
     gravityOn,nlOn,spinUpOn,outFilename,RayleighAlpha,RayleighBeta,elementOrder,joint,
-    platformTurbineConnectionNodeNumber,jointTransform,reducedDOFList,nlParams,BC,nodalTerms,numModes)
+    platformTurbineConnectionNodeNumber,jointTransform,reducedDOFList,nlParams,BC,nodalTerms,numModes,return_all_reaction_forces)
 end
 
 """

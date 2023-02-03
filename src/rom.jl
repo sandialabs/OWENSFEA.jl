@@ -263,7 +263,6 @@ function  structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega,OmegaDo
 	totalNumDOF = numNodes * numDOFPerNode
 	_,numReducedDOF = size(feamodel.jointTransform)
 	nodalTerms = feamodel.nodalTerms
-	countedNodes = []
 	###-----------------------------------------
 
 	###------- intitialization -----------------
@@ -474,8 +473,21 @@ function  structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega,OmegaDo
 
 	end
 	###------ calculate reaction at turbine base ----------------------------
-	reactionNodeNumber = feamodel.platformTurbineConnectionNodeNumber
-	FReaction_sp1 = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H,countedNodes)
+	if feamodel.return_all_reaction_forces
+        FReaction_sp1 = zeros(mesh.numNodes*6)
+        for reactionNodeNumber = 1:mesh.numNodes
+			try
+				countedNodes = [] #TODO:??
+				FReaction_sp1[(reactionNodeNumber-1)*6+1:reactionNodeNumber*6] = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H,countedNodes)
+			catch
+				# This is where a joint is println(reactionNodeNumber)
+			end
+        end
+    else
+        reactionNodeNumber = feamodel.platformTurbineConnectionNodeNumber
+        countedNodes = [] #TODO:??
+        FReaction_sp1 = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H,countedNodes)
+    end
 	###----------------------------------------------------------------------
 	#Calculate strain
 	elStrain = calculateStrainForElements(numEl,numNodesPerEl,numDOFPerNode,conn,elementOrder,el,displ_iter,feamodel.nlOn)

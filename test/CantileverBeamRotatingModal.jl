@@ -245,7 +245,7 @@ end
 # ######## PLOT
 # ###############################################
 # import PyPlot
-# PyPlot.ion()
+# PyPlot.pygui(true)
 # PyPlot.rc("figure", figsize=(4, 3))
 # PyPlot.rc("font", size=10.0)
 # PyPlot.rc("lines", linewidth=1.5)

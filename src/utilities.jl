@@ -356,7 +356,7 @@ function determineActiveDofsFromSlaveNode(slaveDof,numDofPerNode)
         slaveNodeActiveDof = []
     end
 
-    return slaveNodeActiveDof
+    return Int.(slaveNodeActiveDof)
 end
 
 """

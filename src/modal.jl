@@ -30,10 +30,11 @@ Modal analysis
 * `theta_z_90::Array{<:float}`: NnodesxNmodes out-of-phase mode shape rotation about z
 
 """
-function modal(feamodel,mesh,el;Omega=0.0,displ=zeros(mesh.numNodes*6),OmegaStart=0.0,returnDynMatrices=false)
+function modal(feamodel,mesh,el;Omega=0.0,displ=zeros(mesh.numNodes*6),OmegaStart=0.0,returnDynMatrices=false,elStorage=nothing,predef=nothing)
 
-    elStorage = initialElementCalculations(feamodel,el,mesh) #performs initial element calculations
-
+    if elStorage===nothing
+        elStorage = initialElementCalculations(feamodel,el,mesh) #performs initial element calculations
+    end
     # [structureMass,structureMOI,structureMassCenter]=calculateStructureMassProps(elStorage) #calculate mass properties of structure
 
     #Do nonlinear iteration if needed
@@ -48,7 +49,7 @@ function modal(feamodel,mesh,el;Omega=0.0,displ=zeros(mesh.numNodes*6),OmegaStar
     if staticAnalysisSuccessful
         freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,
         U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90,eigVal,eigVec= linearAnalysisModal(feamodel,
-        mesh,el,displ,Omega,elStorage;returnDynMatrices) #performs modal analysis
+        mesh,el,displ,Omega,elStorage;returnDynMatrices,predef) #performs modal analysis
     else
         error("Static analysis unsuccessful. Exiting")
     end
@@ -59,7 +60,7 @@ end
 """
 Internal, see ?modal
 """
-function  linearAnalysisModal(feamodel,mesh,el,displ,Omega,elStorage;returnDynMatrices=false)
+function  linearAnalysisModal(feamodel,mesh,el,displ,Omega,elStorage;returnDynMatrices=false,predef=nothing)
 
     feamodel.analysisType = "M" #Force type to align with the modal call
     elementOrder = feamodel.elementOrder  #extract element order from feamodel
@@ -74,7 +75,7 @@ function  linearAnalysisModal(feamodel,mesh,el,displ,Omega,elStorage;returnDynMa
     eldisp = zeros(numNodesPerEl*numDOFPerNode)
 
     timeInt = TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,
-    displ,Omega,elStorage;Kg,Mg,Cg,countedNodes)
+    displ,Omega,elStorage;Kg,Mg,Cg,countedNodes,predef)
 
     # #apply general 6x6  mass, damping, and stiffness matrices to nodes
     # Kg_all,Mg_all,Cg_all = applyGeneralConcentratedTerms(Kg,Mg,Cg,feamodel.nodalTerms.concStiffGen,feamodel.nodalTerms.concMassGen,feamodel.nodalTerms.concDampGen)
