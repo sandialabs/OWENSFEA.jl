@@ -46,8 +46,7 @@
     - git config --global https.sslVerify false
     - git config --global http.proxy http://user:nopass@proxy.sandia.gov:80
     - git config --global https.proxy http://user:nopass@proxy.sandia.gov:80
-    - git clone git@cee-gitlab.sandia.gov:8921-VAWT-TOOLS/GXBeam.jl.git
-    - julia -e 'using Pkg; Pkg.add(PackageSpec(url="./GXBeam.jl")); Pkg.add(PackageSpec(url=pwd())); Pkg.build("GyricFEA"); Pkg.test("GyricFEA";coverage=true)'
+    - julia -e 'using Pkg; Pkg.add(PackageSpec(url=pwd())); Pkg.build("GyricFEA"); Pkg.test("GyricFEA";coverage=true)'
     # Comment out below if you do not want coverage results.
     - julia -e 'using Pkg; Pkg.add("Coverage");
       import GyricFEA; cd(joinpath(dirname(pathof(GyricFEA)), ".."));
