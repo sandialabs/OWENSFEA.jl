@@ -85,7 +85,7 @@ function runme(islinear)
     deformedxyz = zeros(length(points),3,length(RPM))
 
     for i = 1:length(RPM)
-        system = StaticSystem(assembly)
+        system = GXBeam.StaticSystem(assembly)
         w0 = [0, 0, RPM[i]*(2*pi)/60]
         # create dictionary of prescribed conditions
         prescribed_conditions = Dict(
