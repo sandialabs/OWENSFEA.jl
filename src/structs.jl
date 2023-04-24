@@ -188,7 +188,7 @@ end
 NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,maxIterations,maxNumLoadSteps,
 minLoadStepDelta,minLoadStep,prescribedLoadStep) = NlParams(iterationType,
 adaptiveLoadSteppingFlag,tolerance,maxIterations,maxNumLoadSteps,minLoadStepDelta,
-minLoadStep,prescribedLoadStep,false)
+minLoadStep,prescribedLoadStep,false,0.5,0.5)
 
 """
 Internal, Timoshenko element matrices

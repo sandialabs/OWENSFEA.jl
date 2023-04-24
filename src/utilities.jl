@@ -1744,7 +1744,11 @@ Internal, applies 6x6 concentrated nodal terms from user input.
 function applyConcentratedTerms(numNodes, numDOFPerNode; filename="none",data=[], jointData=[],applyTop2Bot=false)
 
     if filename!="none" && !occursin("[",filename)
-        data = DelimitedFiles.readdlm(filename,' ',skipstart = 0)
+        try
+            data = DelimitedFiles.readdlm(filename,' ',skipstart = 0)
+        catch
+            data = []
+        end
     end
 
     concStiff = zeros(numNodes*numDOFPerNode, numNodes*numDOFPerNode)

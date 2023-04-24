@@ -137,7 +137,7 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
     # println("Elapsed time for static analysis(s):")
     # println(t_static)
 
-    elStrain = calculateStrainForElements(mesh.numEl,numNodesPerEl,numDOFPerNode,conn,elementOrder,el,displ,feamodel.nlOn)
+    elStrain = calculateStrainForElements(mesh.numEl,numNodesPerEl,numDOFPerNode,conn,elementOrder,el,displ,feamodel.nlOn)  
     #feamodel.platformTurbineConnectionNodeNumber #TODO: multiple points?  the whole mesh?
     timeInt = nothing
     dispData = copy(displ)

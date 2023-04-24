@@ -315,3 +315,29 @@ function calculateElementOrientation(mesh)
     #assign data to element orientation (Ort) object
     return GyricFEA.Ort(Psi_d,Theta_d,twist_d,lenv,elNum,Offset)
 end
+
+"""
+element_strain(element, F, M)
+
+Calculate the strain of a beam element given the resultant forces and moments applied on
+the element expressed in the deformed beam element frame
+"""
+@inline function element_strain(element, F, M)
+    C = element.compliance
+    S11 = C[SVector{3}(1:3), SVector{3}(1:3)]
+    S12 = C[SVector{3}(1:3), SVector{3}(4:6)]
+    return S11*F + S12*M
+end
+
+"""
+    element_curvature(element, F, M)
+
+Calculate the curvature of a beam element given the resultant force and moments applied on
+the element expressed in the deformed beam element frame
+"""
+@inline function element_curvature(element, F, M)
+    C = element.compliance
+    S21 = C[SVector{3}(4:6), SVector{3}(1:3)]
+    S22 = C[SVector{3}(4:6), SVector{3}(4:6)]
+    return S21*F + S22*M
+end

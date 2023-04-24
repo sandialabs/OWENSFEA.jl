@@ -66,7 +66,7 @@ assembly = Assembly(points, start, stop;
     lengths = lengths,
     midpoints = xm)
 
-system = System(assembly)
+system = DynamicSystem(assembly)
 # create dictionary of prescribed conditions
 prescribed_conditions = Dict(
 # fixed left side
@@ -90,7 +90,7 @@ MV = system.M * V
 # process state and eigenstates
 state = AssemblyState(system, assembly;
 prescribed_conditions = prescribed_conditions)
-eigenstates = [AssemblyState(system, assembly, V[:,k];
+eigenstates = [AssemblyState(V[:,k],system, assembly;
     prescribed_conditions = prescribed_conditions) for k = 1:nev]
 
 frequencyNative = [imag(λ2[k])/(2*pi) for k = 1:2:nev]

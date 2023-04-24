@@ -17,7 +17,7 @@ G = E/2(1+v)
 rho = 7800.0
 Iyy = b*h^3/12
 Izz = b^3*h/12
-J = Iyy+Izz
+J = Iyy+Izz 
 RPM = 0:1000:6000
 nev = 12 #modes
 sweepD = 45.0
@@ -30,7 +30,7 @@ sweepD = 45.0
 # straight section of the beam
 L_b1 = L/2 # inch
 r_b1 = [0.0, 0, 0]
-nelem_b1 = 5
+nelem_b1 = 20
 lengths_b1, xp_b1, xm_b1, Cab_b1 = discretize_beam(L_b1, r_b1, nelem_b1)
 
 # swept section of the beam
@@ -66,7 +66,7 @@ assembly = Assembly(points, start, stop;
     lengths = lengths,
     midpoints = xm)
 
-system = System(assembly)
+system = DynamicSystem(assembly)
 # create dictionary of prescribed conditions
 prescribed_conditions = Dict(
 # fixed left side
@@ -87,7 +87,6 @@ for j = 1:length(RPM)
     angular_velocity = w0,
     linear = false,
     reset_state = true,
-    find_steady_state = true,
     nev = nev)
 
     # corresponding left eigenvectors
@@ -100,7 +99,7 @@ for j = 1:length(RPM)
     # process state and eigenstates
     global state = AssemblyState(system, assembly;
     prescribed_conditions = prescribed_conditions)
-    eigenstates = [AssemblyState(system, assembly, V[:,k];
+    eigenstates = [AssemblyState(V[:,k],system, assembly;
         prescribed_conditions = prescribed_conditions) for k = 1:nev]
 
     frequencyNative = [imag(λ2[k])/(2*pi) for k = 1:2:nev]
@@ -232,6 +231,7 @@ end
 for i = 1:length(RPM)
     for j = 1:Int(nev/2)
         # println(i)
+        
         if i>=5
             atol = freqGXBeam[i,j]*0.05
         else

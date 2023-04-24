@@ -6,6 +6,7 @@ import ArnoldiMethod
 import DelimitedFiles
 import Printf
 import MAT
+import StaticArrays
 
 export mapACloads, calculateStructureMassProps, createJointTransform, calculateReducedDOFVector, constructReducedDispVectorMap, calculateBCMap, calculateElementMass!, ConcMassAssociatedWithElement, applyBC, calculateReactionForceAtNode, calculateStrainForElements, findElementsAssociatedWithNodeNumber, applyGeneralConcentratedTerms
 
