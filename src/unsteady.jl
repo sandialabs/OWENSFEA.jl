@@ -356,37 +356,3 @@ function mapMatrixNonSym(Ktemp)
     return Kel
 
 end
-
-"""
-    elementPostProcess(elementNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H)
-
-Internal, calculates the reaction force associated with an element.
-
-#Input
-* `elementNumber`  node number joint constraints are desired at
-* `feamodel`       object containing feamodel data
-* `mesh`           object containing mesh data
-* `elStorage`      object containing stored element data
-* `el`             object containing element data
-* `timeInt`        object containing time integration parameters
-* `dispData`       object containing displacement data
-* `displ_iter`     converged displacement solution
-* `rbData`         vector containing rigid body displacement, velocity, and acceleration
-* `Omega`          rotor speed (Hz)
-* `OmegaDot`       rotor acceleratin (Hz)
-* `CN2H`           transformation matrix from inertial frame to hub frame
-
-#Output
-* `Fpp`            vector containing reaction force vector associated with element
-"""
-function elementPostProcess(elementNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H,countedNodes)
-    elementOrder = feamodel.elementOrder
-    numNodesPerEl = elementOrder + 1
-    numDOFPerNode = 6
-    eldisp = zeros(numNodesPerEl*numDOFPerNode)
-
-    Fpp = TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,dispData,Omega,elStorage;
-        rbData,CN2H,OmegaDot,displ_im1=displ_iter,timeInt,postprocess=true,elementNumber,countedNodes)
-
-    return Fpp
-end

@@ -38,7 +38,7 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
     # dispm1 = zeros(12) #declare type
     dispOld = copy(displ) #initialize scope
     staticAnalysisSuccessfulForLoadStep = false #initialize scope
-    countedNodes = []
+    countedNodes = [] #TODO:??
 
     elementOrder = feamodel.elementOrder #extract element order from feamodel
     numNodesPerEl = elementOrder + 1 #do initialization
@@ -143,8 +143,22 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
     dispData = copy(displ)
     rbData = zeros(9)
     CN2H = 1.0*LinearAlgebra.I(3)
-    FReaction = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ,rbData,Omega,0.0,CN2H,countedNodes)
-
+    #Calculate reaction at turbine base (hardwired to node number 1)
+    if feamodel.return_all_reaction_forces
+        FReaction = zeros(mesh.numEl*6)
+        for reactionNodeNumber = 1:mesh.numEl
+            try
+                countedNodes = [] #TODO:??
+                FReaction[(reactionNodeNumber-1)*6+1:reactionNodeNumber*6] = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ,rbData,Omega,OmegaDot,CN2H,countedNodes;single_element_reaction=true)
+            catch
+                # This is where a joint is println(reactionNodeNumber)
+            end
+        end
+    else
+        reactionNodeNumber = feamodel.platformTurbineConnectionNodeNumber
+        FReaction = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ,rbData,Omega,OmegaDot,CN2H,countedNodes)
+    end
+    
     return displ,elStrain,staticAnalysisSuccessful,FReaction
 
 end
