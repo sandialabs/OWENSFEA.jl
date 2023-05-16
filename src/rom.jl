@@ -343,8 +343,20 @@ function  structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega,OmegaDo
 				useDisp = true
 				iterationType = "DI"  #uses direct iteration
 
-				#do element calculations
-				elInput = ElInput(elementOrder,modalFlag,timeInt,xloc,sectionProps,sweepAngle,coneAngle,rollAngle,aeroSweepAngle,iterationType,useDisp,preStress,false,false,1.0,1.0,1.0,1.0,1.0,analysisType,disp,zero(disp),zero(disp),zero(disp),0.0,0.0,0.0,0.0,elx,0.0,0.0,true,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,false)
+				#do element calculations #TODO: fix this
+				gravityOn = false
+				RayleighAlpha = 0.0
+				RayleighBeta  = 0.0
+				accelVec   = 0.0
+				omegaVec  = 0.0
+				omegaDotVec  = 0.0
+				Omega = 0.0
+				OmegaDot  = 0.0
+				CN2H = LinearAlgebra.I(3)
+				airDensity = 1.225
+				freq = 0.0
+				firstIteration = false
+				elInput = ElInput(elementOrder,modalFlag,timeInt,xloc,sectionProps,sweepAngle,coneAngle,rollAngle,aeroSweepAngle,iterationType,useDisp,preStress,false,false,1.0,1.0,1.0,1.0,1.0,analysisType,disp,zero(disp),zero(disp),zero(disp),0.0,0.0,0.0,0.0,zero(disp),elx,0.0,0.0,gravityOn,RayleighAlpha,RayleighBeta,accelVec ,omegaVec, omegaDotVec, Omega, OmegaDot, CN2H, airDensity, freq, firstIteration)
 				Ke = calculateTimoshenkoElementNLSS(elInput) #calculate nonlinear timoshenko element stiffness matrix
 
 				Kg = assemblyMatrixOnly(Ke,conn[i,:],numNodesPerEl,numDOFPerNode,Kg) #assemble nonlinear timoshenko element stiffness matrix
