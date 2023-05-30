@@ -439,6 +439,7 @@ Struct with mesh definition
 * `structuralSpanLocNorm::Array{<:float}`: Should be named heigh loc norm - unitized position along the blade height, used for aeroload mapping
 * `structuralNodeNumbers::Array{<:int}`: Node numbers associated with blades for aero loads mapping
 * `structuralElNumbers::Array{<:int}`: Element numbers associated with blades for aero loads mapping
+* `hubNodeNum::int`: Node number where the rotating part of the turbine starts, assumes meshing always starts with tower, then blades, etc.
 
 # Outputs:
 * `none`:
@@ -458,7 +459,10 @@ mutable struct Mesh
     structuralSpanLocNorm
     structuralNodeNumbers
     structuralElNumbers
+    hubNodeNum
 end
+
+Mesh(nodeNum,numEl,numNodes,x,y,z,elNum,conn,type,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers) = Mesh(nodeNum,numEl,numNodes,x,y,z,elNum,conn,type,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,1)
 
 """
     Ort(Psi_d,Theta_d,Twist_d,Length,elNum,Offset)
