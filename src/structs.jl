@@ -61,7 +61,7 @@ end
 Model inputs for FEA analysis, struct
 
 # Inputs
-* `analysisType::string`: Newmark Beta time stepping "TNB", Dean time stepping "TD", modal "M"
+* `analysisType::string`: Newmark Beta time stepping "TNB", Dean time stepping "TD", modal "M", and stiff "stiff" (where the forces are just directly mapped, the displacements and strains set to 0 and the structures not run)
 * `initCond::Array{<:float}`: Initial conditions Nx3 matrix consisting of nodeNumber, local DOF (1-6), and displacement value
 * `aeroElasticOn::Bool`: Include simplified flutter calculataions in the timoshenko element matrices
 * `guessFreq::float`: aeroelastic starting guess, only used if aeroElasticOn

@@ -118,88 +118,104 @@ function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,t
     displdot_im1 = copy(dispdot_s)
     displ_im1 = copy(disp_s)
 
-    while (unorm>tol && iterationCount < maxIterations) #iteration loop
-        if iterationCount>maxIterations-5
-            println("$unorm $iterationCount")
-        end
-
-        Kg = zero(Kg1)
-        Fg = zero(Fg1)
-        countedNodes = []
-        timeInt = TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,
-        dispData,Omega,elStorage;Kg,Fg,eldisp_sm1,eldispdot,eldispddot,eldispiter,rbData,CN2H,delta_t,
-        OmegaDot,displ_im1,displdot_im1,displddot_im1,iterationCount,predef,countedNodes)
-
-        #apply general 6x6  mass, damping, and stiffness matrices to nodes
-        # Except only stiffness is used here... #TODO: is this correct?  Shouldn't the cross coupling between say mass and force (from acceleration) be included with the cross terms?
-        # The way it's coded, if a 6x6 matrix is used, the diagonals are used in the timoshenko dynamic elements, and the cross terms (without the diagonal) are applied here.
-        # Kg,_,_ = applyGeneralConcentratedTerms(Kg,Kg,Kg,nodalTerms.concStiffGen,nodalTerms.concMassGen,nodalTerms.concDampGen)
-
-        #Apply external loads to structure
-        for i=1:length(Fexternal)
-            if analysisType=="TD"
-                Fg[Fdof[i]] = Fg[Fdof[i]] + Fexternal[i]*delta_t^2
+    if analysisType != "stiff"
+        while (unorm>tol && iterationCount < maxIterations) #iteration loop
+            if iterationCount>maxIterations-5
+                println("$unorm $iterationCount")
             end
-            if analysisType=="TNB"
-                Fg[Fdof[i]] = Fg[Fdof[i]] + Fexternal[i]
+
+            Kg = zero(Kg1)
+            Fg = zero(Fg1)
+            countedNodes = []
+            timeInt = TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,
+            dispData,Omega,elStorage;Kg,Fg,eldisp_sm1,eldispdot,eldispddot,eldispiter,rbData,CN2H,delta_t,
+            OmegaDot,displ_im1,displdot_im1,displddot_im1,iterationCount,predef,countedNodes)
+
+            #apply general 6x6  mass, damping, and stiffness matrices to nodes
+            # Except only stiffness is used here... #TODO: is this correct?  Shouldn't the cross coupling between say mass and force (from acceleration) be included with the cross terms?
+            # The way it's coded, if a 6x6 matrix is used, the diagonals are used in the timoshenko dynamic elements, and the cross terms (without the diagonal) are applied here.
+            # Kg,_,_ = applyGeneralConcentratedTerms(Kg,Kg,Kg,nodalTerms.concStiffGen,nodalTerms.concMassGen,nodalTerms.concDampGen)
+
+            #Apply external loads to structure
+            for i=1:length(Fexternal)
+                if analysisType=="TD"
+                    Fg[Fdof[i]] = Fg[Fdof[i]] + Fexternal[i]*delta_t^2
+                end
+                if analysisType=="TNB"
+                    Fg[Fdof[i]] = Fg[Fdof[i]] + Fexternal[i]
+                end
             end
-        end
 
-        #------ apply constraints on system -----------------------------------
-        Kg = applyConstraints(Kg,feamodel.jointTransform)
-        Fg = applyConstraintsVec(Fg,feamodel.jointTransform)
+            #------ apply constraints on system -----------------------------------
+            Kg = applyConstraints(Kg,feamodel.jointTransform)
+            Fg = applyConstraintsVec(Fg,feamodel.jointTransform)
 
-        #Apply BCs to global system
-        KgTotal,FgTotal = applyBC(Kg,Fg,feamodel.BC,numDOFPerNode)
-        solution = KgTotal\FgTotal  #solve for displacements
+            #Apply BCs to global system
+            KgTotal,FgTotal = applyBC(Kg,Fg,feamodel.BC,numDOFPerNode)
+            solution = KgTotal\FgTotal  #solve for displacements
 
-        solution = feamodel.jointTransform*solution #transform to full dof listing
+            solution = feamodel.jointTransform*solution #transform to full dof listing
 
-        if feamodel.nlOn  #calculate norm between current iteration and last iteration
-            if iterationType=="NR"
-                unorm = calcUnorm(displ_im1+solution,displ_im1)
+            if feamodel.nlOn  #calculate norm between current iteration and last iteration
+                if iterationType=="NR"
+                    unorm = calcUnorm(displ_im1+solution,displ_im1)
+                else
+                    unorm = calcUnorm(solution,displ_im1)
+                end
             else
-                unorm = calcUnorm(solution,displ_im1)
+                unorm = 0.0
             end
-        else
-            unorm = 0.0
-        end
 
-        if iterationType=="NR"
-            #if newton raphson update u, udot, uddot at each iteration
-            displ_im1 = displ_im1 + solution
-            cap_delta_displ = displ_im1 - dispData.displ_s
-            displddot_im1 = timeInt.a3*(cap_delta_displ) - timeInt.a4*dispData.displdot_s - timeInt.a5*dispData.displddot_s
-            displdot_im1  = -timeInt.a7*dispData.displdot_s -timeInt.a8*dispData.displddot_s + timeInt.a6*(cap_delta_displ)
-        elseif (iterationType=="DI"||iterationType=="LINEAR")
-            displ_im1 = solution
-        else
-            error("iteration type not supported, choose another")
-        end
-
-        iterationCount = iterationCount + 1
-    end #While
-
-    #Calculate reaction at turbine base (hardwired to node number 1)
-    if feamodel.return_all_reaction_forces
-        FReaction = zeros(mesh.numNodes*6)
-        for reactionNodeNumber = 1:mesh.numNodes
-            try
-                countedNodes = [] #TODO:??
-                FReaction[(reactionNodeNumber-1)*6+1:reactionNodeNumber*6] = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_im1,rbData,Omega,OmegaDot,CN2H,countedNodes)
-            catch
-                # This is where a joint is println(reactionNodeNumber)
+            if iterationType=="NR"
+                #if newton raphson update u, udot, uddot at each iteration
+                displ_im1 = displ_im1 + solution
+                cap_delta_displ = displ_im1 - dispData.displ_s
+                displddot_im1 = timeInt.a3*(cap_delta_displ) - timeInt.a4*dispData.displdot_s - timeInt.a5*dispData.displddot_s
+                displdot_im1  = -timeInt.a7*dispData.displdot_s -timeInt.a8*dispData.displddot_s + timeInt.a6*(cap_delta_displ)
+            elseif (iterationType=="DI"||iterationType=="LINEAR")
+                displ_im1 = solution
+            else
+                error("iteration type not supported, choose another")
             end
-        end
+
+            iterationCount = iterationCount + 1
+        end #While
     else
-        reactionNodeNumber = feamodel.platformTurbineConnectionNodeNumber
-        countedNodes = [] #TODO:??
-        FReaction = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_im1,rbData,Omega,OmegaDot,CN2H,countedNodes)
+        displ_im1 .*= 0.0
     end
+
     #Calculate strain
     elStrain = calculateStrainForElements(mesh.numEl,numNodesPerEl,numDOFPerNode,conn,feamodel.elementOrder,el,displ_im1,feamodel.nlOn)
     if (iterationCount>=maxIterations)
         @warn "Maximum iterations exceeded."
+    end
+
+    #Calculate reaction at turbine base (hardwired to node number 1)
+    if feamodel.return_all_reaction_forces
+        FReaction = zeros(mesh.numNodes*6)
+        if analysisType != "stiff"
+            for reactionNodeNumber = 1:mesh.numNodes
+                try
+                    countedNodes = [] #TODO:??
+                    FReaction[(reactionNodeNumber-1)*6+1:reactionNodeNumber*6] = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_im1,rbData,Omega,OmegaDot,CN2H,countedNodes)
+                catch
+                    # This is where a joint is println(reactionNodeNumber)
+                end
+            end
+        else
+            for (idof,dof) in enumerate(Fdof)
+                FReaction[dof] = Fexternal[idof]
+            end
+        end
+    else
+        if analysisType != "stiff"
+            reactionNodeNumber = feamodel.platformTurbineConnectionNodeNumber
+            countedNodes = [] #TODO:??
+            FReaction = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_im1,rbData,Omega,OmegaDot,CN2H,countedNodes)
+        else
+            FReaction = nothing
+            @warn "Aggregate FReaction for stiff not completed"
+        end
     end
 
     FReaction_sp1 = FReaction

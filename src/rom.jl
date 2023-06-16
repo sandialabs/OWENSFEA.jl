@@ -302,182 +302,185 @@ function  structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega,OmegaDo
 	eta_iter = zeros(feamodel.numModes)
 	etadot_iter = zeros(feamodel.numModes)
 	etaddot_iter = zeros(feamodel.numModes)
+	if analysisType != "stiff"
+		while iterationCount < maxIter && uNorm > tol  #iteration loop
+			Kg = zeros(totalNumDOF,totalNumDOF)  #initialize global stiffness and force vector
+			Fg = zeros(totalNumDOF)
+			## Element Assembly Loop for NL Terms
+			if nlROM
+				for i=1:numEl
+					eldispiter = zeros(numNodesPerEl*numDOFPerNode)
+					#Calculate Ke and Fe for element i
+					index = 1                           #initialize element data
+					analysisType = analysisType
+					elementOrder = elementOrder
+					modalFlag = true
+					xloc = [0.0 el.elLen[i]]
+					sectionProps = el.props[i]
+					sweepAngle = el.psi[i]
+					coneAngle = el.theta[i]
+					rollAngle = el.roll[i]
+					aeroSweepAngle = 0.0
 
-	while iterationCount < maxIter && uNorm > tol  #iteration loop
-		Kg = zeros(totalNumDOF,totalNumDOF)  #initialize global stiffness and force vector
-		Fg = zeros(totalNumDOF)
-		## Element Assembly Loop for NL Terms
-		if nlROM
-			for i=1:numEl
-				eldispiter = zeros(numNodesPerEl*numDOFPerNode)
-				#Calculate Ke and Fe for element i
-				index = 1                           #initialize element data
-				analysisType = analysisType
-				elementOrder = elementOrder
-				modalFlag = true
-				xloc = [0.0 el.elLen[i]]
-				sectionProps = el.props[i]
-				sweepAngle = el.psi[i]
-				coneAngle = el.theta[i]
-				rollAngle = el.roll[i]
-				aeroSweepAngle = 0.0
+					for j=1:numNodesPerEl
 
-				for j=1:numNodesPerEl
+						elx[j] = x[conn[i,j]]
 
-					elx[j] = x[conn[i,j]]
-
-					#get element nodal displacements at s and s-1 time step
-					for k=1:numDOFPerNode
-						eldispiter[index] = displ_iter[(conn[i,j]-1)*numDOFPerNode + k]
-						index = index + 1
+						#get element nodal displacements at s and s-1 time step
+						for k=1:numDOFPerNode
+							eldispiter[index] = displ_iter[(conn[i,j]-1)*numDOFPerNode + k]
+							index = index + 1
+						end
 					end
+
+					disp= eldispiter
+					omegaVec = zeros(3) #convert from platform frame to hub-frame
+					omegaDotVec = zeros(3)
+					Omega = 0.0
+					OmegaDot = 0.0
+					CN2H = CN2H
+					preStress = false
+					useDisp = true
+					iterationType = "DI"  #uses direct iteration
+
+					#do element calculations #TODO: fix this
+					gravityOn = false
+					RayleighAlpha = 0.0
+					RayleighBeta  = 0.0
+					accelVec   = 0.0
+					omegaVec  = 0.0
+					omegaDotVec  = 0.0
+					Omega = 0.0
+					OmegaDot  = 0.0
+					CN2H = LinearAlgebra.I(3)
+					airDensity = 1.225
+					freq = 0.0
+					firstIteration = false
+					elInput = ElInput(elementOrder,modalFlag,timeInt,xloc,sectionProps,sweepAngle,coneAngle,rollAngle,aeroSweepAngle,iterationType,useDisp,preStress,false,false,1.0,1.0,1.0,1.0,1.0,analysisType,disp,zero(disp),zero(disp),zero(disp),0.0,0.0,0.0,0.0,zero(disp),elx,0.0,0.0,gravityOn,RayleighAlpha,RayleighBeta,accelVec ,omegaVec, omegaDotVec, Omega, OmegaDot, CN2H, airDensity, freq, firstIteration)
+					Ke = calculateTimoshenkoElementNLSS(elInput) #calculate nonlinear timoshenko element stiffness matrix
+
+					Kg = assemblyMatrixOnly(Ke,conn[i,:],numNodesPerEl,numDOFPerNode,Kg) #assemble nonlinear timoshenko element stiffness matrix
+					#................................................
 				end
-
-				disp= eldispiter
-				omegaVec = zeros(3) #convert from platform frame to hub-frame
-				omegaDotVec = zeros(3)
-				Omega = 0.0
-				OmegaDot = 0.0
-				CN2H = CN2H
-				preStress = false
-				useDisp = true
-				iterationType = "DI"  #uses direct iteration
-
-				#do element calculations #TODO: fix this
-				gravityOn = false
-				RayleighAlpha = 0.0
-				RayleighBeta  = 0.0
-				accelVec   = 0.0
-				omegaVec  = 0.0
-				omegaDotVec  = 0.0
-				Omega = 0.0
-				OmegaDot  = 0.0
-				CN2H = LinearAlgebra.I(3)
-				airDensity = 1.225
-				freq = 0.0
-				firstIteration = false
-				elInput = ElInput(elementOrder,modalFlag,timeInt,xloc,sectionProps,sweepAngle,coneAngle,rollAngle,aeroSweepAngle,iterationType,useDisp,preStress,false,false,1.0,1.0,1.0,1.0,1.0,analysisType,disp,zero(disp),zero(disp),zero(disp),0.0,0.0,0.0,0.0,zero(disp),elx,0.0,0.0,gravityOn,RayleighAlpha,RayleighBeta,accelVec ,omegaVec, omegaDotVec, Omega, OmegaDot, CN2H, airDensity, freq, firstIteration)
-				Ke = calculateTimoshenkoElementNLSS(elInput) #calculate nonlinear timoshenko element stiffness matrix
-
-				Kg = assemblyMatrixOnly(Ke,conn[i,:],numNodesPerEl,numDOFPerNode,Kg) #assemble nonlinear timoshenko element stiffness matrix
-				#................................................
 			end
-		end
-		###------- end element calculation and assembly ------------------
-		##
+			###------- end element calculation and assembly ------------------
+			##
 
-		#Apply external loads to structure
-		for i=1:length(Fexternal)
-			Fg[Fdof[i]] = Fg[Fdof[i]] + Fexternal[i]
-		end
+			#Apply external loads to structure
+			for i=1:length(Fexternal)
+				Fg[Fdof[i]] = Fg[Fdof[i]] + Fexternal[i]
+			end
 
-		###------ apply constraints on system -----------------------------------
-		##
-		Fg = applyConstraintsVec(Fg,feamodel.jointTransform)
+			###------ apply constraints on system -----------------------------------
+			##
+			Fg = applyConstraintsVec(Fg,feamodel.jointTransform)
 
-		if nlROM
-			Kg = applyConstraints(Kg,feamodel.jointTransform)
-		end
-		###----------------------------------------------------------------------
-		##
-		#Apply BCs to global system
-		Fg     = applyBCModalVec(Fg,BC.numpBC,BC.map)
+			if nlROM
+				Kg = applyConstraints(Kg,feamodel.jointTransform)
+			end
+			###----------------------------------------------------------------------
+			##
+			#Apply BCs to global system
+			Fg     = applyBCModalVec(Fg,BC.numpBC,BC.map)
 
-		eta_s = dispData.eta_s
-		etadot_s = dispData.etadot_s
-		etaddot_s = dispData.etaddot_s
+			eta_s = dispData.eta_s
+			etadot_s = dispData.etadot_s
+			etaddot_s = dispData.etaddot_s
 
-		Phi       = rom.Phi
-		Feta = (Phi')*Fg   #transform global displacement vector to modal space
+			Phi       = rom.Phi
+			Feta = (Phi')*Fg   #transform global displacement vector to modal space
 
-		if nlROM
-			Kgnl   = applyBCModal(Kg,BC.numpBC,BC.map)
-			Kgnlrom = Phi'*Kgnl*Phi     #transform nonlinear stiffness matrix to modal space
-		else
-			Kgnlrom = zeros(size(rom.Mr)) #if nonlinear deactivated set Kgnlrom to zero matrix
-		end
+			if nlROM
+				Kgnl   = applyBCModal(Kg,BC.numpBC,BC.map)
+				Kgnlrom = Phi'*Kgnl*Phi     #transform nonlinear stiffness matrix to modal space
+			else
+				Kgnlrom = zeros(size(rom.Mr)) #if nonlinear deactivated set Kgnlrom to zero matrix
+			end
 
 
-		#define omega_i and omegaDot_i and body accelerations
-		omega_platform_s = rbData[4:6]
-		omega_x = omega_platform_s[1]
-		omega_y = omega_platform_s[2]
-		omega_z = omega_platform_s[3] + Omega*2*pi
+			#define omega_i and omegaDot_i and body accelerations
+			omega_platform_s = rbData[4:6]
+			omega_x = omega_platform_s[1]
+			omega_y = omega_platform_s[2]
+			omega_z = omega_platform_s[3] + Omega*2*pi
 
-		omega_platform_dot = rbData[7:9]
-		omegaDot_x = omega_platform_dot[1]
-		omegaDot_y = omega_platform_dot[2]
-		omegaDot_z = omega_platform_dot[3] + OmegaDot*2*pi
+			omega_platform_dot = rbData[7:9]
+			omegaDot_x = omega_platform_dot[1]
+			omegaDot_y = omega_platform_dot[2]
+			omegaDot_z = omega_platform_dot[3] + OmegaDot*2*pi
 
-		a_x = rbData[1] #platform accelerations (in hub frame)
-		a_y = rbData[2]
-		a_z = rbData[3]
+			a_x = rbData[1] #platform accelerations (in hub frame)
+			a_y = rbData[2]
+			a_z = rbData[3]
 
-		if eltype(feamodel.gravityOn) == Bool && feamodel.gravityOn == true
-			a_x_n = 0.0 #accelerations in inertial frame
-			a_y_n = 0.0
-			a_z_n = 9.81 # gravity
-		elseif eltype(feamodel.gravityOn) == Bool && feamodel.gravityOn == false
-			a_x_n = 0.0 #accelerations in inertial frame
-			a_y_n = 0.0
-			a_z_n = 0.0
-		end
+			if eltype(feamodel.gravityOn) == Bool && feamodel.gravityOn == true
+				a_x_n = 0.0 #accelerations in inertial frame
+				a_y_n = 0.0
+				a_z_n = 9.81 # gravity
+			elseif eltype(feamodel.gravityOn) == Bool && feamodel.gravityOn == false
+				a_x_n = 0.0 #accelerations in inertial frame
+				a_y_n = 0.0
+				a_z_n = 0.0
+			end
 
-		if eltype(feamodel.gravityOn) == Float64
-			a_x_n = feamodel.gravityOn[1] #accelerations in inertial frame
-			a_y_n = feamodel.gravityOn[2]
-			a_z_n = feamodel.gravityOn[3]
-		end
+			if eltype(feamodel.gravityOn) == Float64
+				a_x_n = feamodel.gravityOn[1] #accelerations in inertial frame
+				a_y_n = feamodel.gravityOn[2]
+				a_z_n = feamodel.gravityOn[3]
+			end
 
-		a_temp = CN2H*[a_x_n; a_y_n; a_z_n]
+			a_temp = CN2H*[a_x_n; a_y_n; a_z_n]
 
-		a_x = a_x + a_temp[1]
-		a_y = a_y + a_temp[2]
-		a_z = a_z + a_temp[3]
+			a_x = a_x + a_temp[1]
+			a_y = a_y + a_temp[2]
+			a_z = a_z + a_temp[3]
 
-		#calculate reduced order spin soft, cent force, body force,
-		#circulatory, coriolis
+			#calculate reduced order spin soft, cent force, body force,
+			#circulatory, coriolis
 
-		Seff = rom.SrOx2.*omega_x^2 + rom.SrOy2.*omega_y^2 + rom.SrOz2.*omega_z^2 +
-		rom.SrOxOy.*omega_x*omega_y + rom.SrOyOz.*omega_y*omega_z +
-		rom.SrOxOz.*omega_x*omega_z
+			Seff = rom.SrOx2.*omega_x^2 + rom.SrOy2.*omega_y^2 + rom.SrOz2.*omega_z^2 +
+			rom.SrOxOy.*omega_x*omega_y + rom.SrOyOz.*omega_y*omega_z +
+			rom.SrOxOz.*omega_x*omega_z
 
-		FcentEff = rom.FrOx2.*omega_x^2 + rom.FrOy2.*omega_y^2 + rom.FrOz2.*omega_z^2 +
-		rom.FrOxOy.*omega_x*omega_y + rom.FrOyOz.*omega_y*omega_z +
-		rom.FrOxOz.*omega_x*omega_z + rom.FrOxdot*omegaDot_x +
-		rom.FrOydot*omegaDot_y + rom.FrOzdot*omegaDot_z
+			FcentEff = rom.FrOx2.*omega_x^2 + rom.FrOy2.*omega_y^2 + rom.FrOz2.*omega_z^2 +
+			rom.FrOxOy.*omega_x*omega_y + rom.FrOyOz.*omega_y*omega_z +
+			rom.FrOxOz.*omega_x*omega_z + rom.FrOxdot*omegaDot_x +
+			rom.FrOydot*omegaDot_y + rom.FrOzdot*omegaDot_z
 
-		FbodyEff = rom.FrAx.*a_x + rom.FrAy.*a_y + rom.FrAz.*a_z
+			FbodyEff = rom.FrAx.*a_x + rom.FrAy.*a_y + rom.FrAz.*a_z
 
-		Heff = rom.HrOx.*omegaDot_x + rom.HrOy.*omegaDot_y + rom.HrOz.*omegaDot_z
+			Heff = rom.HrOx.*omegaDot_x + rom.HrOy.*omegaDot_y + rom.HrOz.*omegaDot_z
 
-		Geff = rom.GrOx*omega_x + rom.GrOy*omega_y + rom.GrOz*omega_z
+			Geff = rom.GrOx*omega_x + rom.GrOy*omega_y + rom.GrOz*omega_z
 
-		#combine for effective reduced order stiffness, damping, force
-		Keff = rom.Kr + Seff + Heff + Kgnlrom
-		Ceff = rom.Cr + Geff
-		Feff = Feta + FcentEff + FbodyEff
+			#combine for effective reduced order stiffness, damping, force
+			Keff = rom.Kr + Seff + Heff + Kgnlrom
+			Ceff = rom.Cr + Geff
+			Feff = Feta + FcentEff + FbodyEff
 
-		eta_iter,etadot_iter,etaddot_iter = timeIntegrateSubSystemEff(rom.Mr,Keff,Ceff,Feff,timeInt,eta_s,etadot_s,etaddot_s)
+			eta_iter,etadot_iter,etaddot_iter = timeIntegrateSubSystemEff(rom.Mr,Keff,Ceff,Feff,timeInt,eta_s,etadot_s,etaddot_s)
 
-		#reconstruct constrained dof vector from boundary conditions
-		dispVec = Phi*eta_iter
-		dispdotVec = Phi*etadot_iter
-		dispddotVec = Phi*etaddot_iter
+			#reconstruct constrained dof vector from boundary conditions
+			dispVec = Phi*eta_iter
+			dispdotVec = Phi*etadot_iter
+			dispddotVec = Phi*etaddot_iter
 
-		#[dispVec,dispdotVec,dispddotVec]    = constructReducedDispVector(dispVec,dispdotVec,dispddotVec,numNodes,BC)
-		dispVec = constructReducedDispVectorSingle(dispVec,BC.redVectorMap)
+			#[dispVec,dispdotVec,dispddotVec]    = constructReducedDispVector(dispVec,dispdotVec,dispddotVec,numNodes,BC)
+			dispVec = constructReducedDispVectorSingle(dispVec,BC.redVectorMap)
 
-		displ_iter = feamodel.jointTransform*dispVec #TODO: mutate not overwrite
+			displ_iter = feamodel.jointTransform*dispVec #TODO: mutate not overwrite
 
-		if nlROM
-			uNorm = calcUnorm(displ_iter,displ_last)
-			displ_last = copy(displ_iter)
-			iterationCount = iterationCount + 1
-		else
-			uNorm = 0.0
-		end
+			if nlROM
+				uNorm = calcUnorm(displ_iter,displ_last)
+				displ_last = copy(displ_iter)
+				iterationCount = iterationCount + 1
+			else
+				uNorm = 0.0
+			end
 
+		end #while
+	else
+		displ_iter .*= 0.0
 	end
 	if iterationCount>=maxIter
 		error("Maximum iterations exceeded.")
@@ -487,18 +490,29 @@ function  structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega,OmegaDo
 	###------ calculate reaction at turbine base ----------------------------
 	if feamodel.return_all_reaction_forces
         FReaction_sp1 = zeros(mesh.numNodes*6)
-        for reactionNodeNumber = 1:mesh.numNodes
-			try
-				countedNodes = [] #TODO:??
-				FReaction_sp1[(reactionNodeNumber-1)*6+1:reactionNodeNumber*6] = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H,countedNodes)
-			catch
-				# This is where a joint is println(reactionNodeNumber)
+		if analysisType != "stiff"
+			for reactionNodeNumber = 1:mesh.numNodes
+				try
+					countedNodes = [] #TODO:??
+					FReaction_sp1[(reactionNodeNumber-1)*6+1:reactionNodeNumber*6] = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H,countedNodes)
+				catch
+					# This is where a joint is println(reactionNodeNumber)
+				end
 			end
+		else
+            for (idof,dof) in enumerate(Fdof)
+                FReaction_sp1[dof] = Fexternal[idof]
+            end
         end
     else
-        reactionNodeNumber = feamodel.platformTurbineConnectionNodeNumber
-        countedNodes = [] #TODO:??
-        FReaction_sp1 = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H,countedNodes)
+		if analysisType != "stiff"
+			reactionNodeNumber = feamodel.platformTurbineConnectionNodeNumber
+			countedNodes = [] #TODO:??
+			FReaction_sp1 = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H,countedNodes)
+		else
+			FReaction_sp1 = nothing
+			@warn "Aggregate FReaction for stiff not completed"
+		end
     end
 	###----------------------------------------------------------------------
 	#Calculate strain
