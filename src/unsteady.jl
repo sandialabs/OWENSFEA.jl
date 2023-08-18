@@ -213,8 +213,18 @@ function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,t
             countedNodes = [] #TODO:??
             FReaction = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_im1,rbData,Omega,OmegaDot,CN2H,countedNodes)
         else
-            FReaction = nothing
-            @warn "Aggregate FReaction for stiff not completed"
+            @warn "stiff torque good, reference frame needs to be reviewed for others"
+            FReaction = zeros(6)
+            FReaction[1] = sum(Fexternal[1:6:end])
+            FReaction[2] = sum(Fexternal[2:6:end])
+            FReaction[3] = sum(Fexternal[3:6:end])
+
+            FReaction[4] = sum(-Fexternal[2:6:end].*mesh.z.+Fexternal[3:6:end].*mesh.y)
+            FReaction[5] = sum(Fexternal[1:6:end].*mesh.z.-Fexternal[3:6:end].*mesh.x)
+            FReaction[6] = sum(Fexternal[1:6:end].*mesh.y.+Fexternal[2:6:end].*-mesh.x)
+
+            # FReaction[1:3] = FReaction[1:3]'*CN2H'
+            # FReaction[4:6] = FReaction[4:6]'*CN2H'
         end
     end
 
