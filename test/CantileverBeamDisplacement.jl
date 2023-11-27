@@ -315,7 +315,7 @@ for (iload,load) in enumerate(P)
         Omega_s = Omega_j
 
         uHist[iload,:,i+1] = u_s
-        FReactionHist[i+1,:] = FReaction_j
+        FReactionHist[i+1,:] = FReaction_j[1:6]
         aziHist[i+1] = azi_s
         for ielem = 1:length(elStrain)
             epsilon_x_hist[iload,:,ielem,i] = elStrain[ielem].epsilon_x
