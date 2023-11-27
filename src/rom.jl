@@ -488,32 +488,21 @@ function  structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega,OmegaDo
 
 	end
 	###------ calculate reaction at turbine base ----------------------------
-	if feamodel.return_all_reaction_forces
-        FReaction_sp1 = zeros(mesh.numNodes*6)
-		if analysisType != "stiff"
-			for reactionNodeNumber = 1:mesh.numNodes
-				try
-					countedNodes = [] #TODO:??
-					FReaction_sp1[(reactionNodeNumber-1)*6+1:reactionNodeNumber*6] = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H,countedNodes)
-				catch
-					# This is where a joint is println(reactionNodeNumber)
-				end
+	FReaction_sp1 = zeros(mesh.numNodes*6)
+	if analysisType != "stiff"
+		for reactionNodeNumber = 1:mesh.numNodes
+			try
+				countedNodes = [] #TODO:??
+				FReaction_sp1[(reactionNodeNumber-1)*6+1:reactionNodeNumber*6] = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H,countedNodes)
+			catch
+				# This is where a joint is println(reactionNodeNumber)
 			end
-		else
-            for (idof,dof) in enumerate(Fdof)
-                FReaction_sp1[dof] = Fexternal[idof]
-            end
-        end
-    else
-		if analysisType != "stiff"
-			reactionNodeNumber = feamodel.platformTurbineConnectionNodeNumber
-			countedNodes = [] #TODO:??
-			FReaction_sp1 = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H,countedNodes)
-		else
-			FReaction_sp1 = nothing
-			@warn "Aggregate FReaction for stiff not completed"
 		end
-    end
+	else
+		for (idof,dof) in enumerate(Fdof)
+			FReaction_sp1[dof] = Fexternal[idof]
+		end
+	end
 	###----------------------------------------------------------------------
 	#Calculate strain
 	elStrain = calculateStrainForElements(numEl,numNodesPerEl,numDOFPerNode,conn,elementOrder,el,displ_iter,feamodel.nlOn)

@@ -144,19 +144,14 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
     rbData = zeros(9)
     CN2H = 1.0*LinearAlgebra.I(3)
     #Calculate reaction at turbine base (hardwired to node number 1)
-    if feamodel.return_all_reaction_forces
-        FReaction = zeros(mesh.numEl*6)
-        for reactionNodeNumber = 1:mesh.numEl
-            try
-                countedNodes = [] #TODO:??
-                FReaction[(reactionNodeNumber-1)*6+1:reactionNodeNumber*6] = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ,rbData,Omega,OmegaDot,CN2H,countedNodes;single_element_reaction=true)
-            catch
-                # This is where a joint is println(reactionNodeNumber)
-            end
+    FReaction = zeros(mesh.numEl*6)
+    for reactionNodeNumber = 1:mesh.numEl
+        try
+            countedNodes = [] #TODO:??
+            FReaction[(reactionNodeNumber-1)*6+1:reactionNodeNumber*6] = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ,rbData,Omega,OmegaDot,CN2H,countedNodes;single_element_reaction=true)
+        catch
+            # This is where a joint is println(reactionNodeNumber)
         end
-    else
-        reactionNodeNumber = feamodel.platformTurbineConnectionNodeNumber
-        FReaction = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ,rbData,Omega,OmegaDot,CN2H,countedNodes)
     end
     
     return displ,elStrain,staticAnalysisSuccessful,FReaction
