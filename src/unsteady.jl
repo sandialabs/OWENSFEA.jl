@@ -191,7 +191,7 @@ function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,t
     end
 
     #Calculate reaction at turbine base (hardwired to node number 1)
-    if feamodel.return_all_reaction_forces
+    # if feamodel.return_all_reaction_forces
         FReaction = zeros(mesh.numNodes*6)
         if analysisType != "stiff"
             for reactionNodeNumber = 1:mesh.numNodes
@@ -202,31 +202,31 @@ function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,t
                     # This is where a joint is println(reactionNodeNumber)
                 end
             end
-        else
+        else #TODO: resolve base reaction force as opposed to passthrough
             for (idof,dof) in enumerate(Fdof)
                 FReaction[dof] = Fexternal[idof]
             end
         end
-    else
-        if analysisType != "stiff"
-            reactionNodeNumber = feamodel.platformTurbineConnectionNodeNumber
-            countedNodes = [] #TODO:??
-            FReaction = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_im1,rbData,Omega,OmegaDot,CN2H,countedNodes)
-        else
-            @warn "stiff torque good, reference frame needs to be reviewed for others"
-            FReaction = zeros(6)
-            FReaction[1] = sum(Fexternal[1:6:end])
-            FReaction[2] = sum(Fexternal[2:6:end])
-            FReaction[3] = sum(Fexternal[3:6:end])
+    # else
+    #     if analysisType != "stiff"
+    #         reactionNodeNumber = feamodel.platformTurbineConnectionNodeNumber
+    #         countedNodes = [] #TODO:??
+    #         FReaction = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_im1,rbData,Omega,OmegaDot,CN2H,countedNodes)
+    #     else
+    #         @warn "stiff torque good, reference frame needs to be reviewed for others"
+    #         FReaction = zeros(6)
+    #         FReaction[1] = sum(Fexternal[1:6:end])
+    #         FReaction[2] = sum(Fexternal[2:6:end])
+    #         FReaction[3] = sum(Fexternal[3:6:end])
 
-            FReaction[4] = sum(-Fexternal[2:6:end].*mesh.z.+Fexternal[3:6:end].*mesh.y)
-            FReaction[5] = sum(Fexternal[1:6:end].*mesh.z.-Fexternal[3:6:end].*mesh.x)
-            FReaction[6] = sum(Fexternal[1:6:end].*mesh.y.+Fexternal[2:6:end].*-mesh.x)
+    #         FReaction[4] = sum(-Fexternal[2:6:end].*mesh.z.+Fexternal[3:6:end].*mesh.y)
+    #         FReaction[5] = sum(Fexternal[1:6:end].*mesh.z.-Fexternal[3:6:end].*mesh.x)
+    #         FReaction[6] = sum(Fexternal[1:6:end].*mesh.y.+Fexternal[2:6:end].*-mesh.x)
 
-            # FReaction[1:3] = FReaction[1:3]'*CN2H'
-            # FReaction[4:6] = FReaction[4:6]'*CN2H'
-        end
-    end
+    #         # FReaction[1:3] = FReaction[1:3]'*CN2H'
+    #         # FReaction[4:6] = FReaction[4:6]'*CN2H'
+    #     end
+    # end
 
     FReaction_sp1 = FReaction
     displ_sp1 = displ_im1

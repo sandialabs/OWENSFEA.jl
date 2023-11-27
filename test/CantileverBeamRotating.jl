@@ -281,7 +281,7 @@ function runme(islinear)
             Omega_s = Omega_j
 
             uHist[ii,:,i+1] = u_s
-            FReactionHist[i+1,:] = FReaction_j
+            FReactionHist[i+1,:] = FReaction_j[1:6]
             aziHist[i+1] = azi_s
 
         end # time stepping
