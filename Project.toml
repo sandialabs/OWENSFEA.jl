@@ -1,7 +1,7 @@
 name = "GyricFEA"
 uuid = "3cd7cb04-a333-4aed-a1f1-c87982f3ae73"
 authors = ["Kevin R. Moore <kevmoor@sandia.gov> and contributors"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 ArnoldiMethod = "ec485272-7323-5ecc-a04f-4719b315124d"
