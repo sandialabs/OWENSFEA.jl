@@ -27,3 +27,7 @@ makedocs(;
     sitename = "OWENSFEA.jl",
     authors = "Kevin R. Moore <kevmoor@sandia.gov>",
 )
+
+deploydocs(
+    repo = "github.com/sandialabs/OWENSFEA.jl.git",
+)

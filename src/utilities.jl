@@ -1750,7 +1750,7 @@ Internal, applies 6x6 concentrated nodal terms from user input.
 
 #Input
 * `filename`:   string containing nodal terms filename
-* `data`:       Nx5 or Nx4 array matching general [1 "M6" 1 1 0.0] or diagonal only [1 "M" 1 0.0] (node, Type, dof, value) where type is M,C,K, or F
+* `data`:       Nx5 or Nx4 array matching general [1 "M6" 1 1 0.0] or diagonal only [1 "M" 1 0.0] aligning with node, Type, dof, value, where type is M,C,K, or F
 
 #Output
 * `nodalTerms::NodalTerms`: see ?NodalTerms object containing concentrated nodal data
