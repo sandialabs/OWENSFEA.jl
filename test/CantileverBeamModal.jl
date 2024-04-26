@@ -189,7 +189,7 @@ platformTurbineConnectionNodeNumber = 1,
 pBC = pBC,
 numNodes = mesh.numNodes)
 
-freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=OWENSFEA.modal(feamodel,mesh,el)
+freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=OWENSFEA.modal(feamodel,mesh,el;returnDynMatrices=true)
 
 # OWENS Frequencies that correspond to the GX beam are every other, and then 1,3,5 of the every other sets corresponds to the analytical
 
