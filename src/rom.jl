@@ -16,83 +16,85 @@ This function executes a reduced order model analysis.
 * `rom`            object containing a reduced order feamodel
 """
 function reducedOrderModel(elStorage,feamodel,mesh,el,displ)
+	if feamodel.analysisType == "ROM"
+		countedNodes = []
 
-	countedNodes = []
+		rom0 = calculateROM(feamodel,mesh,el,displ,zeros(9),elStorage,countedNodes)  #Omega   = 0 #calculates system matrices for parked condition
 
-	rom0 = calculateROM(feamodel,mesh,el,displ,zeros(9),elStorage,countedNodes)  #Omega   = 0 #calculates system matrices for parked condition
+		#calculates system matrices for various acceleration, rotor speed, rotor accelration combinations
+		omx = 1
+		omy = 1
+		omz = 1
 
-	#calculates system matrices for various acceleration, rotor speed, rotor accelration combinations
-	omx = 1
-	omy = 1
-	omz = 1
+		omxdot = 1
+		omydot = 1
+		omzdot = 1
 
-	omxdot = 1
-	omydot = 1
-	omzdot = 1
+		a_x = 1
+		a_y = 1
+		a_z = 1
 
-	a_x = 1
-	a_y = 1
-	a_z = 1
+		rom1 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 omx 0.0 0.0 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_x = 1 #OmegaDot_i = 0 accel _i = 0
+		rom2 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 omy 0.0 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_y = 1 #OmegaDot_i = 0 accel_i = 0
+		rom3 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 0.0 omz 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_z = 1 #OmegaDot_i = 0 accel_i = 0
+		rom4 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 omx omy 0.0 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_x,y = 1 #OmegaDot_i = 0 accel_i = 0
+		rom5 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 omy omz 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_y,z = 1 #OmegaDot_i = 0 accel_i = 0
+		rom6 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 omx 0.0 omz 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_x,z = 1 #OmegaDot_i = 0 accel_i = 0
+		rom7 = calculateROMGyric(feamodel,mesh,el,displ,[a_x 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_i = 0 #OmegaDot_i = 0 accel_x = 1
+		rom8 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 a_y 0.0 0.0 0.0 0.0 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_i = 0 #OmegaDot_i = 0 accel_y = 1
+		rom9 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 a_z 0.0 0.0 0.0 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_i = 0 #OmegaDot_i = 0 accel_z = 1
+		rom10 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 0.0 0.0 omxdot 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_i = 0 #OmegaDot_1 = 0 accel_i=0
+		rom11 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 0.0 0.0 0.0 omydot 0.0],elStorage,rom0,countedNodes)  #Omega_i = 0 #OmegaDot_2 = 0 accel_i=0
+		rom12 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 omzdot],elStorage,rom0,countedNodes)  #Omega_i = 0 #OmegaDot_3 = 0 accel_i=0
 
-	rom1 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 omx 0.0 0.0 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_x = 1 #OmegaDot_i = 0 accel _i = 0
-	rom2 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 omy 0.0 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_y = 1 #OmegaDot_i = 0 accel_i = 0
-	rom3 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 0.0 omz 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_z = 1 #OmegaDot_i = 0 accel_i = 0
-	rom4 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 omx omy 0.0 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_x,y = 1 #OmegaDot_i = 0 accel_i = 0
-	rom5 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 omy omz 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_y,z = 1 #OmegaDot_i = 0 accel_i = 0
-	rom6 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 omx 0.0 omz 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_x,z = 1 #OmegaDot_i = 0 accel_i = 0
-	rom7 = calculateROMGyric(feamodel,mesh,el,displ,[a_x 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_i = 0 #OmegaDot_i = 0 accel_x = 1
-	rom8 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 a_y 0.0 0.0 0.0 0.0 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_i = 0 #OmegaDot_i = 0 accel_y = 1
-	rom9 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 a_z 0.0 0.0 0.0 0.0 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_i = 0 #OmegaDot_i = 0 accel_z = 1
-	rom10 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 0.0 0.0 omxdot 0.0 0.0],elStorage,rom0,countedNodes)  #Omega_i = 0 #OmegaDot_1 = 0 accel_i=0
-	rom11 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 0.0 0.0 0.0 omydot 0.0],elStorage,rom0,countedNodes)  #Omega_i = 0 #OmegaDot_2 = 0 accel_i=0
-	rom12 = calculateROMGyric(feamodel,mesh,el,displ,[0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 omzdot],elStorage,rom0,countedNodes)  #Omega_i = 0 #OmegaDot_3 = 0 accel_i=0
+		#reduced order structural stiffness, mass, and damping
+		Kr = rom0.Kr
+		Mr = rom0.Mr
+		Cr = rom0.Cr + rom0.CrModal
+		Fr = rom0.Fr
 
-	#reduced order structural stiffness, mass, and damping
-	Kr = rom0.Kr
-	Mr = rom0.Mr
-	Cr = rom0.Cr + rom0.CrModal
-	Fr = rom0.Fr
+		#reduced order transformation matrices
+		Phi = rom0.Phi
+		invPhi = rom0.invPhi
 
-	#reduced order transformation matrices
-	Phi = rom0.Phi
-	invPhi = rom0.invPhi
+		#reduced order spin softening coefficient matrices
+		SrOx2 = rom1.Kr
+		SrOy2 = rom2.Kr
+		SrOz2 = rom3.Kr
+		SrOxOy = rom4.Kr - rom1.Kr - rom2.Kr
+		SrOyOz = rom5.Kr - rom2.Kr - rom3.Kr
+		SrOxOz = rom6.Kr - rom1.Kr - rom3.Kr
 
-	#reduced order spin softening coefficient matrices
-	SrOx2 = rom1.Kr
-	SrOy2 = rom2.Kr
-	SrOz2 = rom3.Kr
-	SrOxOy = rom4.Kr - rom1.Kr - rom2.Kr
-	SrOyOz = rom5.Kr - rom2.Kr - rom3.Kr
-	SrOxOz = rom6.Kr - rom1.Kr - rom3.Kr
+		#reduced order centrifugal load coefficient matrices
+		FrOx2 = rom1.Fr
+		FrOy2 = rom2.Fr
+		FrOz2 = rom3.Fr
+		FrOxOy = rom4.Fr - rom1.Fr - rom2.Fr
+		FrOyOz = rom5.Fr - rom2.Fr - rom3.Fr
+		FrOxOz = rom6.Fr - rom1.Fr - rom3.Fr
+		FrOxdot = rom10.Fr
+		FrOydot = rom11.Fr
+		FrOzdot = rom12.Fr
 
-	#reduced order centrifugal load coefficient matrices
-	FrOx2 = rom1.Fr
-	FrOy2 = rom2.Fr
-	FrOz2 = rom3.Fr
-	FrOxOy = rom4.Fr - rom1.Fr - rom2.Fr
-	FrOyOz = rom5.Fr - rom2.Fr - rom3.Fr
-	FrOxOz = rom6.Fr - rom1.Fr - rom3.Fr
-	FrOxdot = rom10.Fr
-	FrOydot = rom11.Fr
-	FrOzdot = rom12.Fr
+		#need to calculate reduced order acceleration/body force coefeficients
+		FrAx = rom7.Fr
+		FrAy = rom8.Fr
+		FrAz = rom9.Fr
 
-	#need to calculate reduced order acceleration/body force coefeficients
-	FrAx = rom7.Fr
-	FrAy = rom8.Fr
-	FrAz = rom9.Fr
+		#reduced order gyric coefficient matrices
+		GrOx = rom1.Cr
+		GrOy = rom2.Cr
+		GrOz = rom3.Cr
 
-	#reduced order gyric coefficient matrices
-	GrOx = rom1.Cr
-	GrOy = rom2.Cr
-	GrOz = rom3.Cr
+		#reduced order circulatory coefficient matrices
+		HrOx = 0.5*rom1.Cr
+		HrOy = 0.5*rom2.Cr
+		HrOz = 0.5*rom3.Cr
 
-	#reduced order circulatory coefficient matrices
-	HrOx = 0.5*rom1.Cr
-	HrOy = 0.5*rom2.Cr
-	HrOz = 0.5*rom3.Cr
-
-	rom = ROM(Kr,Mr,Cr,0.0,Fr,Phi,invPhi,SrOx2,SrOy2,SrOz2,SrOxOy,SrOyOz,SrOxOz,FrOx2,FrOy2,FrOz2,FrOxOy,FrOyOz,FrOxOz,FrOxdot,FrOydot,FrOzdot,FrAx,FrAy,FrAz,GrOx,GrOy,GrOz,HrOx,HrOy,HrOz)
-
+		rom = ROM(Kr,Mr,Cr,0.0,Fr,Phi,invPhi,SrOx2,SrOy2,SrOz2,SrOxOy,SrOyOz,SrOxOz,FrOx2,FrOy2,FrOz2,FrOxOy,FrOyOz,FrOxOz,FrOxdot,FrOydot,FrOzdot,FrAx,FrAy,FrAz,GrOx,GrOy,GrOz,HrOx,HrOy,HrOz)
+	else
+		rom = ROM(nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing)
+	end
 	return rom
 end
 
