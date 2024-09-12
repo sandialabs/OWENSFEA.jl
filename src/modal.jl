@@ -93,7 +93,7 @@ function autoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
         Up = []
         # perform an analysis for each rotation rate
         for (irpm,rpm) in enumerate(rotSpdArrayRPM)
-            println("$irpm of $(length(rotorSpeedArrayHZ))")
+            println("$irpm of $(length(rotSpdArrayRPM))")
             # set turbine rotation
             angular_velocity = [0, 0, rpm*(2*pi)/60]
 
