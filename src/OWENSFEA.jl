@@ -7,6 +7,7 @@ import DelimitedFiles
 import Printf
 import MAT
 import StaticArrays
+import GXBeam
 
 export mapACloads, calculateStructureMassProps, createJointTransform, calculateReducedDOFVector, constructReducedDispVectorMap, calculateBCMap, calculateElementMass!, ConcMassAssociatedWithElement, applyBC, calculateReactionForceAtNode, calculateStrainForElements, findElementsAssociatedWithNodeNumber, applyGeneralConcentratedTerms
 
