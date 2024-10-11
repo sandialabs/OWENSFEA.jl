@@ -835,13 +835,13 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
     end
 
     if predef == "update"
-        elStorage.K21NLpredef = collect(K21)
-        elStorage.K12NLpredef = collect(K12)
-        elStorage.K31NLpredef = collect(K31)
-        elStorage.K13NLpredef = collect(K13)
-        elStorage.K22NLpredef = collect(K22)
-        elStorage.K23NLpredef = collect(K23)
-        elStorage.K33NLpredef = collect(K33)
+        elStorage.K21NLpredef = collect(2*K12NL')
+        elStorage.K12NLpredef = collect(K12NL)
+        elStorage.K31NLpredef = collect(2*K13NL')
+        elStorage.K13NLpredef = collect(K13NL)
+        elStorage.K22NLpredef = collect(K22NL)
+        elStorage.K23NLpredef = collect(K23NL)
+        elStorage.K33NLpredef = collect(K33NL)
     end
 
     # Only used if (useDisp)

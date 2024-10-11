@@ -1,5 +1,5 @@
 """
-frequencies = autoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly;
+frequencies = autoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
     minRPM = 0.0,
     maxRPM = 40.0,
     NRPM = 9, # int
