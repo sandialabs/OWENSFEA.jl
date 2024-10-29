@@ -19,6 +19,7 @@ mutable struct FEAModel
     BC
     nodalTerms
     numModes
+    AM_Coeff_Ca
 end
 
 # this way you can use defaults and pass in what is different, and it's mapped
@@ -54,7 +55,8 @@ end
         maxNumLoadSteps = 20,
         minLoadStepDelta = 0.0500,
         minLoadStep = 0.0500,
-        prescribedLoadStep = 0.0)
+        prescribedLoadStep = 0.0,
+        AM_Coeff_Ca = 0.0)
 
 Model inputs for FEA analysis, struct
 
@@ -92,6 +94,7 @@ Model inputs for FEA analysis, struct
 * `minLoadStep`: used in static (steady state) analysis
 * `prescribedLoadStep`: used in static (steady state) analysis
 * `predef::Bool`: will update the elStorage array if passed into Unsteady() with the nonlinear strain stiffening, to be used for subsequent analyses
+* `AM_Coeff_Ca::Float64`: added mass coefficient, also used as a flag depending on if it is 0.0 or not
 
 # Outputs:
 * `none`:
@@ -129,7 +132,8 @@ function FEAModel(;analysisType = "TNB",
     minLoadStepDelta = 0.0500,
     minLoadStep = 0.0500,
     prescribedLoadStep = 0.0,
-    predef = false)
+    predef = false,
+    AM_Coeff_Ca = 0.0)
 
     if jointTransform==0.0
         jointTransform, reducedDOFList = OWENSFEA.createJointTransform(joint,numNodes,numDOFPerNode) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
@@ -159,7 +163,7 @@ function FEAModel(;analysisType = "TNB",
 
     return FEAModel(analysisType,initCond,aeroElasticOn,guessFreq,airDensity,
     gravityOn,nlOn,spinUpOn,outFilename,RayleighAlpha,RayleighBeta,elementOrder,joint,
-    platformTurbineConnectionNodeNumber,jointTransform,reducedDOFList,nlParams,BC,nodalTerms,numModes)
+    platformTurbineConnectionNodeNumber,jointTransform,reducedDOFList,nlParams,BC,nodalTerms,numModes,AM_Coeff_Ca)
 end
 
 """
@@ -567,8 +571,11 @@ mutable struct SectionPropsArray
     aeroCenterOffset
     xaf
     yaf
+    added_M22
+    added_M33
 end
-SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset) = SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,nothing,nothing) #convenience function
+SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset) = SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,nothing,nothing,zero(rhoA),zero(rhoA)) #convenience function
+SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,xaf,yaf) = SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,xaf,yaf,zero(rhoA),zero(rhoA)) #convenience function
 
 """
 Internal, see ?Ort and ?SectionPropsArray
