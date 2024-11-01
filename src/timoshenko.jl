@@ -552,15 +552,15 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
         a_z_n = input.gravityOn[3]
     end
 
-    a_x = accelVec[1] #acceleration of body in hub frame (from platform rigid body motion)
-    a_y = accelVec[2]
-    a_z = accelVec[3]
+    a_x_body = accelVec[1] #acceleration of body in hub frame (from platform rigid body motion)
+    a_y_body = accelVec[2]
+    a_z_body = accelVec[3]
 
     a_grav = CN2H*[a_x_n; a_y_n; a_z_n]
 
-    a_x_total = a_x + a_grav[1]
-    a_y_total = a_y + a_grav[2]
-    a_z_total = a_z + a_grav[3]
+    a_x = a_x_body + a_grav[1]
+    a_y = a_y_body + a_grav[2]
+    a_z = a_z_body + a_grav[3]
 
 
     #Integration loop
@@ -634,9 +634,9 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
         ybarlocal = posLocal[2]
         zbarlocal = posLocal[3]
 
-        fx = rhoA*a_x_total #let these loads be defined in the inertial frame
-        fy = rhoA*a_y_total + added_M22*a_y
-        fz = rhoA*a_z_total + added_M33*a_z
+        fx = rhoA*a_x #let these loads be defined in the inertial frame
+        fy = rhoA*a_y + added_M22*a_y_body
+        fz = rhoA*a_z + added_M33*a_z_body
 
         rvec = [ 0; ycm; zcm]
 
