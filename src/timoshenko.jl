@@ -147,6 +147,8 @@ function calculateTimoshenkoElementInitialRun(elementOrder,modalFlag,xloc,sectio
         rhoIzz = interpolateVal(sectionProps.rhoIzz,N)
         rhoJ   = interpolateVal(sectionProps.rhoJ,N)
         rhoIyz = interpolateVal(sectionProps.rhoIyz,N)
+        added_M22 = interpolateVal(sectionProps.added_M22,N) 
+        added_M33 = interpolateVal(sectionProps.added_M33,N)
 
         vprime = 0.0 #set to zero to deactivate nonlinearites from initial element calculations
         wprime = 0.0
@@ -188,9 +190,9 @@ function calculateTimoshenkoElementInitialRun(elementOrder,modalFlag,xloc,sectio
         calculateElement1!(rhoA,integrationFactor,N1,N1,M11)
         calculateElement1!(rhoA*zcm,integrationFactor,N1,N5,M15)
         calculateElement1!(-rhoA*ycm,integrationFactor,N1,N6,M16)
-        calculateElement1!(rhoA,integrationFactor,N2,N2,M22)
+        calculateElement1!(rhoA+added_M22,integrationFactor,N2,N2,M22)
         calculateElement1!(-rhoA*zcm,integrationFactor,N2,N4,M24)
-        calculateElement1!(rhoA,integrationFactor,N3,N3,M33)
+        calculateElement1!(rhoA+added_M33,integrationFactor,N3,N3,M33)
         calculateElement1!(rhoA*ycm,integrationFactor,N3,N4,M34)
         calculateElement1!(rhoJ,integrationFactor,N4,N4,M44)
         calculateElement1!(rhoIyy,integrationFactor,N5,N5,M55)
@@ -550,15 +552,15 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
         a_z_n = input.gravityOn[3]
     end
 
-    a_x = accelVec[1] #acceleration of body in hub frame (from platform rigid body motion)
-    a_y = accelVec[2]
-    a_z = accelVec[3]
+    a_x_body = accelVec[1] #acceleration of body in hub frame (from platform rigid body motion)
+    a_y_body = accelVec[2]
+    a_z_body = accelVec[3]
 
-    a_temp = CN2H*[a_x_n; a_y_n; a_z_n]
+    a_grav = CN2H*[a_x_n; a_y_n; a_z_n]
 
-    a_x = a_x + a_temp[1]
-    a_y = a_y + a_temp[2]
-    a_z = a_z + a_temp[3]
+    a_x = a_x_body + a_grav[1]
+    a_y = a_y_body + a_grav[2]
+    a_z = a_z_body + a_grav[3]
 
 
     #Integration loop
@@ -575,6 +577,8 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
 
         #..... interpolate for value at quad point .....
         rhoA = interpolateVal(sectionProps.rhoA,N) #struct mass terms
+        added_M22 = interpolateVal(sectionProps.added_M22,N) 
+        added_M33 = interpolateVal(sectionProps.added_M33,N)
 
         # Only used if (useDisp || preStress)
         EA = interpolateVal(sectionProps.EA,N)
@@ -631,8 +635,9 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
         zbarlocal = posLocal[3]
 
         fx = rhoA*a_x #let these loads be defined in the inertial frame
-        fy = rhoA*a_y
-        fz = rhoA*a_z
+        fy = rhoA*a_y + added_M22*a_y_body
+        fz = rhoA*a_z + added_M33*a_z_body
+
         rvec = [ 0; ycm; zcm]
 
         fi_hub = [fx;fy;fz]
@@ -835,13 +840,13 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
     end
 
     if predef == "update"
-        elStorage.K21NLpredef = collect(K21)
-        elStorage.K12NLpredef = collect(K12)
-        elStorage.K31NLpredef = collect(K31)
-        elStorage.K13NLpredef = collect(K13)
-        elStorage.K22NLpredef = collect(K22)
-        elStorage.K23NLpredef = collect(K23)
-        elStorage.K33NLpredef = collect(K33)
+        elStorage.K21NLpredef = collect(2*K12NL')
+        elStorage.K12NLpredef = collect(K12NL)
+        elStorage.K31NLpredef = collect(2*K13NL')
+        elStorage.K13NLpredef = collect(K13NL)
+        elStorage.K22NLpredef = collect(K22NL)
+        elStorage.K23NLpredef = collect(K23NL)
+        elStorage.K33NLpredef = collect(K33NL)
     end
 
     # Only used if (useDisp)

@@ -1,4 +1,167 @@
 """
+frequencies = autoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
+    minRPM = 0.0,
+    maxRPM = 40.0,
+    NRPM = 9, # int
+    vtksavename = nothing,
+    saveModes = [1,3,5], #must be int
+    saveRPM = [1,3,5], #must be int
+    mode_scaling = 500.0,
+    )
+
+Automated Campbell Diagram Generator, this function runs the model with centrifugal stiffening for the specified RPM levels.  
+If FEAinputs.analysisType == "GX" and vtksavename are specified, it will output paraview mode shape files at the specified save name. 
+
+#Inputs
+* `FEAinputs::OWENSFEA.FEAModel`: The FEA modeling options
+* `mymesh::OWENSFEA.Mesh`: a previously generated turbine mesh
+* `myel::OWENSFEA.El`: the element properties associated with that mesh
+* `system::GXBeam.System`: the converted GXBeam system from the mesh and el
+* `assembly::GXBeam.AssemblyState`: the converted GXBeam assembly from the mesh and el
+* `sections::Array{Float64, 3}`: the 3D point cloud to be converted to VTK format
+* `minRPM::Float64`: minimum RPM to be run, e.x. 0.0
+* `maxRPM::Float64`: maximum RPM to be run e.x. 40.0
+* `NRPM::Int64`: number of linear discretizations of RPM e.x. 9 must be int
+* `vtksavename::string`: filename (with path if desired) of the VTK outputs if GX.  Set to "nothing" to not save.
+* `saveModes::Array{Int64}`: The modes to save in the VTK outputs e.x. [1,3,5] must be int
+* `saveRPM::Array{Int64}`: The RPMs to save in the VTK outputs e.x. [1,3,5] must be int
+* `mode_scaling::Float64`: The mode scaling in the VTK outputs e.x. 500.0
+
+#Outputs
+* `frequency::Array{Float64}`: The output modal frequencies
+"""
+function autoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
+    minRPM = 0.0,
+    maxRPM = 40.0,
+    NRPM = 9, # int
+    vtksavename = nothing,
+    saveModes = [1,3,5], #must be int
+    saveRPM = [1,3,5], #must be int
+    mode_scaling = 500.0,
+    )
+
+    rotSpdArrayRPM = LinRange(minRPM,maxRPM,NRPM)
+
+    # Campbell Diagram generation
+    if FEAinputs.analysisType!="GX"
+        rotorSpeedArrayHZ = rotSpdArrayRPM ./ 60.0
+        freq = zeros(length(rotorSpeedArrayHZ),FEAinputs.numModes)
+        for irpm=1:length(rotorSpeedArrayHZ)
+            println("$irpm of $(length(rotorSpeedArrayHZ))")
+            rotorSpeed = rotorSpeedArrayHZ[irpm]
+            local Omega = rotorSpeed
+            displ = zeros(mymesh.numNodes*6)
+            OmegaStart = Omega
+            
+            freqtemp,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,
+            U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90,displ=modal(FEAinputs,
+            mymesh,myel;displ,Omega,OmegaStart,returnDynMatrices=false)
+            
+            freq[irpm,:] = freqtemp[1:FEAinputs.numModes]
+        end
+        
+        return freq
+    else
+        ########################################
+        ############ GXBeam ####################
+        ########################################
+
+        prescribed_conditions  = setPrescribedConditions(mymesh;pBC=FEAinputs.BC.pBC)#,Fexternal,ForceDof)
+        
+        # prescribed_conditions = Dict(
+        #     # fixed base
+        #     1 => PrescribedConditions(ux=0, uy=0, uz=0, theta_x=0, theta_y=0, theta_z=0),
+        #     # fixed top, but free to rotate around z-axis
+        #     top_idx => PrescribedConditions(ux=0, uy=0, uz=0, theta_x=0, theta_y=0),
+        # )
+
+        # --- Perform Analysis --- #
+
+        # gravity vector
+        gravity = [0, 0, -9.81] #TODO: from FEAinputs
+
+        # number of modes
+        nmode = FEAinputs.numModes
+
+        # number of eigenvalues
+        nev = 2*nmode
+
+        # storage for results
+        freq2 = zeros(length(rotSpdArrayRPM), nmode)
+        λ_save = Array{Array{ComplexF64,1},1}(undef,length(rotSpdArrayRPM))
+        eigenstates_save = Array{Array{GXBeam.AssemblyState,1},1}(undef,length(rotSpdArrayRPM))
+        Up = []
+        # perform an analysis for each rotation rate
+        for (irpm,rpm) in enumerate(rotSpdArrayRPM)
+            println("$irpm of $(length(rotSpdArrayRPM))")
+            # set turbine rotation
+            angular_velocity = [0, 0, rpm*(2*pi)/60]
+
+            # eigenvalues and (right) eigenvectors
+            system, λ, V, converged = GXBeam.eigenvalue_analysis!(system, assembly;
+                prescribed_conditions = prescribed_conditions,
+                angular_velocity = angular_velocity,
+                gravity = gravity,
+                nev = nev
+                )
+
+            # check convergence
+            @assert converged
+
+            if irpm > 1
+                # construct correlation matrix
+                C = Up*system.M*V
+
+                # correlate eigenmodes
+                perm, corruption = GXBeam.correlate_eigenmodes(C)
+
+                # re-arrange eigenvalues
+                λ = λ[perm]
+
+                # update left eigenvector matrix
+                Up = GXBeam.left_eigenvectors(system, λ, V)
+                Up = Up[perm,:]
+            else
+                # update left eigenvector matrix
+                Up = GXBeam.left_eigenvectors(system, λ, V)
+            end
+
+            # save frequencies
+            freq2[irpm,:] = [imag(λ[k])/(2*pi) for k = 1:2:nev]
+
+            state = GXBeam.AssemblyState(system, assembly;
+            prescribed_conditions = prescribed_conditions)
+            eigenstates = [GXBeam.AssemblyState(V[:,k],system, assembly;
+            prescribed_conditions = prescribed_conditions) for k = 1:nev]
+            λ_save[irpm] = λ
+            eigenstates_save[irpm] = eigenstates
+        end
+
+        if !isnothing(vtksavename) #TODO: map the OWENS state into the gx state for filesaving
+            state = GXBeam.AssemblyState(system, assembly; prescribed_conditions=prescribed_conditions)
+    
+            try #this should error if someone on windows uses backslash '\'
+                lastforwardslash = findlast(x->x=='/',vtksavename)
+                filepath = vtksavename[1:lastforwardslash-1]
+                if !isdir(filepath)
+                    mkdir(filepath)
+                end
+            catch
+                @info "Please manually create the directory to house $vtksavename"
+            end
+            for isaveRPM in saveRPM
+                for isavemode in saveModes
+                    GXBeam.write_vtk("$(vtksavename)_RPM$(rotSpdArrayRPM[isaveRPM])_Mode$(isavemode)", assembly, state, 
+                        λ_save[isaveRPM][isavemode], eigenstates_save[isaveRPM][isavemode]; sections,mode_scaling)
+                end
+            end
+        end
+
+        return freq2
+    end
+end
+
+"""
     modal(feamodel,mesh,el;Omega=0.0,displ=zeros(mesh.numNodes*6),OmegaStart=0.0,returnDynMatrices=false)
 
 Modal analysis
