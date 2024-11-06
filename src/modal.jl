@@ -3,14 +3,14 @@ frequencies = autoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections
     minRPM = 0.0,
     maxRPM = 40.0,
     NRPM = 9, # int
-    vtksavename = nothing,
+    VTKsavename = nothing,
     saveModes = [1,3,5], #must be int
     saveRPM = [1,3,5], #must be int
     mode_scaling = 500.0,
     )
 
 Automated Campbell Diagram Generator, this function runs the model with centrifugal stiffening for the specified RPM levels.  
-If FEAinputs.analysisType == "GX" and vtksavename are specified, it will output paraview mode shape files at the specified save name. 
+If FEAinputs.analysisType == "GX" and VTKsavename are specified, it will output paraview mode shape files at the specified save name. 
 
 #Inputs
 * `FEAinputs::OWENSFEA.FEAModel`: The FEA modeling options
@@ -22,7 +22,7 @@ If FEAinputs.analysisType == "GX" and vtksavename are specified, it will output 
 * `minRPM::Float64`: minimum RPM to be run, e.x. 0.0
 * `maxRPM::Float64`: maximum RPM to be run e.x. 40.0
 * `NRPM::Int64`: number of linear discretizations of RPM e.x. 9 must be int
-* `vtksavename::string`: filename (with path if desired) of the VTK outputs if GX.  Set to "nothing" to not save.
+* `VTKsavename::string`: filename (with path if desired) of the VTK outputs if GX.  Set to "nothing" to not save.
 * `saveModes::Array{Int64}`: The modes to save in the VTK outputs e.x. [1,3,5] must be int
 * `saveRPM::Array{Int64}`: The RPMs to save in the VTK outputs e.x. [1,3,5] must be int
 * `mode_scaling::Float64`: The mode scaling in the VTK outputs e.x. 500.0
@@ -34,7 +34,7 @@ function autoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
     minRPM = 0.0,
     maxRPM = 40.0,
     NRPM = 9, # int
-    vtksavename = nothing,
+    VTKsavename = nothing,
     saveModes = [1,3,5], #must be int
     saveRPM = [1,3,5], #must be int
     mode_scaling = 500.0,
@@ -137,21 +137,21 @@ function autoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
             eigenstates_save[irpm] = eigenstates
         end
 
-        if !isnothing(vtksavename) #TODO: map the OWENS state into the gx state for filesaving
+        if !isnothing(VTKsavename) #TODO: map the OWENS state into the gx state for filesaving
             state = GXBeam.AssemblyState(system, assembly; prescribed_conditions=prescribed_conditions)
     
             try #this should error if someone on windows uses backslash '\'
-                lastforwardslash = findlast(x->x=='/',vtksavename)
-                filepath = vtksavename[1:lastforwardslash-1]
+                lastforwardslash = findlast(x->x=='/',VTKsavename)
+                filepath = VTKsavename[1:lastforwardslash-1]
                 if !isdir(filepath)
                     mkdir(filepath)
                 end
             catch
-                @info "Please manually create the directory to house $vtksavename"
+                @info "Please manually create the directory to house $VTKsavename"
             end
             for isaveRPM in saveRPM
                 for isavemode in saveModes
-                    GXBeam.write_vtk("$(vtksavename)_RPM$(rotSpdArrayRPM[isaveRPM])_Mode$(isavemode)", assembly, state, 
+                    GXBeam.write_vtk("$(VTKsavename)_RPM$(rotSpdArrayRPM[isaveRPM])_Mode$(isavemode)", assembly, state, 
                         λ_save[isaveRPM][isavemode], eigenstates_save[isaveRPM][isavemode]; sections,mode_scaling)
                 end
             end
