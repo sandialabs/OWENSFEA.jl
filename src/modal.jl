@@ -314,7 +314,7 @@ function  linearAnalysisModal(feamodel,mesh,el,displ,Omega,elStorage;returnDynMa
 
     # #write output
     if feamodel.analysisType !="FA"
-        freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90 = ModalOutput(freq,damp,phase1,phase2,imagCompSign,feamodel.outFilename)
+        freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90 = ModalOutput(freq,damp,phase1,phase2,imagCompSign,feamodel.dataOutputFilename)
     end
 
     return freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90,eigVal,eigVec
