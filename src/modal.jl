@@ -78,7 +78,22 @@ function autoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
         # --- Perform Analysis --- #
 
         # gravity vector
-        gravity = [0, 0, -9.81] #TODO: from FEAinputs
+        if eltype(FEAinputs.gravityOn) == Bool && FEAinputs.gravityOn == true
+            a_x_n = 0.0 #accelerations in inertial frame
+            a_y_n = 0.0
+            a_z_n = -9.81 # gravity
+        elseif eltype(FEAinputs.gravityOn) == Bool && FEAinputs.gravityOn == false
+            a_x_n = 0.0 #accelerations in inertial frame
+            a_y_n = 0.0
+            a_z_n = 0.0
+        end
+    
+        if eltype(FEAinputs.gravityOn) == Float64
+            a_x_n = FEAinputs.gravityOn[1] #accelerations in inertial frame
+            a_y_n = FEAinputs.gravityOn[2]
+            a_z_n = FEAinputs.gravityOn[3]
+        end
+        gravity = [a_x_n, a_y_n, a_z_n] #TODO: from FEAinputs
 
         # number of modes
         nmode = FEAinputs.numModes
@@ -151,7 +166,7 @@ function autoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
             end
             for isaveRPM in saveRPM
                 for isavemode in saveModes
-                    GXBeam.write_vtk("$(VTKsavename)_RPM$(rotSpdArrayRPM[isaveRPM])_Mode$(isavemode)", assembly, state, 
+                    GXBeam.write_vtk("$(VTKsavename)_RPM$(rotSpdArrayRPM[isaveRPM])_Mode$(isavemode)_eigenmode", assembly, state, 
                         λ_save[isaveRPM][isavemode], eigenstates_save[isaveRPM][isavemode]; sections,mode_scaling)
                 end
             end
