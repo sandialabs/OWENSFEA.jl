@@ -133,7 +133,7 @@ function runOWENS()
     uHist = zeros(mesh.numNodes*numDOFPerNode,numTS+1) #put here so it keeps the last RPM solution in the scope
 
     feamodel = OWENSFEA.FEAModel(;analysisType = "TNB",
-    outFilename = "none",
+    dataOutputFilename = "none",
     joint,
     pBC = pBC,
     numNodes = mesh.numNodes,
