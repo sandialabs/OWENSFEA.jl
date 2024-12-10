@@ -18,115 +18,10 @@ rho = 7800.0
 Iyy = b*h^3/12
 Izz = b^3*h/12
 J = Iyy+Izz 
-RPM = 0:1000:6000
+RPM = collect(0:1000:6000)
 nev = 12 #modes
 sweepD = 45.0
 
-###############################################
-######## GXBeam
-###############################################
-# create points
-# straight section of the beam
-# straight section of the beam
-L_b1 = L/2 # inch
-r_b1 = [0.0, 0, 0]
-nelem_b1 = 20
-lengths_b1, xp_b1, xm_b1, Cab_b1 = discretize_beam(L_b1, r_b1, nelem_b1)
-
-# swept section of the beam
-L_b2 = L/2 # inch
-r_b2 = [L/2, 0, 0]
-nelem_b2 = 20
-cs, ss = cos(sweepD*pi/180), sin(sweepD*pi/180)
-frame_b2 = [cs ss 0; -ss cs 0; 0 0 1]
-lengths_b2, xp_b2, xm_b2, Cab_b2 = discretize_beam(L_b2, r_b2, nelem_b2;
-    frame = frame_b2)
-
-# combine elements and points into one array
-nelem = nelem_b1 + nelem_b2
-points = vcat(xp_b1, xp_b2[2:end])
-# points = [[points1[i][3],points1[i][2],points1[i][1]] for i = 1:length(points1)]
-
-start = 1:nelem_b1 + nelem_b2
-stop = 2:nelem_b1 + nelem_b2 + 1
-lengths = vcat(lengths_b1, lengths_b2)
-xm = vcat(xm_b1, xm_b2)
-# xm = [[xm1[i][3],xm1[i][2],xm1[i][1]] for i = 1:length(xm1)]
-Cab = vcat(Cab_b1, Cab_b2)
-
-# compliance matrix for each beam element
-compliance = fill(Diagonal([1/(E*A), 1/(E*A/2.6*5/6), 1/(E*A/2.6*5/6), 1/(G*J), 1/(E*Iyy), 1/(E*Izz)]), nelem)
-mass = fill(Diagonal([rho*A, rho*A, rho*A, rho*J, rho*Iyy, rho*Izz]), nelem)
-
-# create assembly of interconnected nonlinear beams
-assembly = Assembly(points, start, stop;
-    compliance = compliance,
-    mass = mass,
-    frames = Cab,
-    lengths = lengths,
-    midpoints = xm)
-
-system = GXBeam.DynamicSystem(assembly)
-# create dictionary of prescribed conditions
-prescribed_conditions = Dict(
-# fixed left side
-1 => PrescribedConditions(ux=0, uy=0, uz=0, theta_x=0, theta_y=0, theta_z=0),
-# shear force on right tip
-# nelem+1 => PrescribedConditions(ux=0, uy=0, uz=0, theta_x=0, theta_y=0, theta_z=0)
-)
-
-freqGXBeam = zeros(length(RPM),Int(nev/2))
-for j = 1:length(RPM)
-# j = 2
-    w0 = [0, 0,RPM[j]*(2*pi)/60]
-
-    # eigenvalues and (right) eigenvectors
-    global system
-    system, λ2, V, converged = eigenvalue_analysis!(system, assembly;
-    prescribed_conditions = prescribed_conditions,
-    angular_velocity = w0,
-    linear = false,
-    reset_state = true,
-    nev = nev)
-
-    # corresponding left eigenvectors
-    U = left_eigenvectors(system, λ2, V)
-
-    # post-multiply mass matrix with right eigenvector matrix
-    # (we use this later for correlating eigenvalues)
-    MV = system.M * V
-
-    # process state and eigenstates
-    global state = AssemblyState(system, assembly;
-    prescribed_conditions = prescribed_conditions)
-    eigenstates = [AssemblyState(V[:,k],system, assembly;
-        prescribed_conditions = prescribed_conditions) for k = 1:nev]
-
-    frequencyNative = [imag(λ2[k])/(2*pi) for k = 1:2:nev]
-
-    # set previous left eigenvector matrix
-    U_p = copy(U)
-
-    # construct correlation matrix
-    C = U_p*MV
-
-    # correlate eigenmodes
-    perm, corruption = correlate_eigenmodes(C)
-
-    # re-arrange eigenvalues and eigenvectors
-    global λ2 = λ2[perm]
-    # U = U[perm,:]
-    # MV = MV[:,perm]
-    global eigenstates = eigenstates[perm]
-    #
-    # # update previous eigenvector matrix
-    # U_p .= U
-    #
-    # # update previous eigenvector matrix
-    # U_p .= U[1]
-
-    freqGXBeam[j,:] = [imag(λ2[k])/(2*pi) for k = 1:2:nev]
-end
 # println(freqGXBeam)
 
 
@@ -201,6 +96,52 @@ pBC = [1 1 0
 # mesh.numNodes 5 0
 # mesh.numNodes 6 0]
 
+###############################################
+######## GXBeam
+###############################################
+# create points
+# straight section of the beam
+# straight section of the beam
+L_b1 = L/2 # inch
+r_b1 = [0.0, 0, 0]
+nelem_b1 = 20
+lengths_b1, xp_b1, xm_b1, Cab_b1 = discretize_beam(L_b1, r_b1, nelem_b1)
+
+# swept section of the beam
+L_b2 = L/2 # inch
+r_b2 = [L/2, 0, 0]
+nelem_b2 = 20
+cs, ss = cos(sweepD*pi/180), sin(sweepD*pi/180)
+frame_b2 = [cs ss 0; -ss cs 0; 0 0 1]
+lengths_b2, xp_b2, xm_b2, Cab_b2 = discretize_beam(L_b2, r_b2, nelem_b2;
+    frame = frame_b2)
+
+# combine elements and points into one array
+nelem = nelem_b1 + nelem_b2
+points = vcat(xp_b1, xp_b2[2:end])
+# points = [[points1[i][3],points1[i][2],points1[i][1]] for i = 1:length(points1)]
+
+start = 1:nelem_b1 + nelem_b2
+stop = 2:nelem_b1 + nelem_b2 + 1
+lengths = vcat(lengths_b1, lengths_b2)
+xm = vcat(xm_b1, xm_b2)
+# xm = [[xm1[i][3],xm1[i][2],xm1[i][1]] for i = 1:length(xm1)]
+Cab = vcat(Cab_b1, Cab_b2)
+
+# compliance matrix for each beam element
+compliance = fill(Diagonal([1/(E*A), 1/(E*A/2.6*5/6), 1/(E*A/2.6*5/6), 1/(G*J), 1/(E*Iyy), 1/(E*Izz)]), nelem)
+mass = fill(Diagonal([rho*A, rho*A, rho*A, rho*J, rho*Iyy, rho*Izz]), nelem)
+
+# create assembly of interconnected nonlinear beams
+assembly = Assembly(points, start, stop;
+    compliance = compliance,
+    mass = mass,
+    frames = Cab,
+    lengths = lengths,
+    midpoints = xm)
+
+system = GXBeam.DynamicSystem(assembly)
+
 feamodel = OWENSFEA.FEAModel(;analysisType = "M",
 dataOutputFilename = "none",
 joint = joint,
@@ -211,16 +152,24 @@ nlOn = true,
 spinUpOn = true,
 numNodes = mesh.numNodes)
 
-freqOWENS = zeros(length(RPM),Int(nev/2))
-for j = 1:length(RPM)
-    # println(j)
-    Omega = RPM[j]/60 #*(2*pi)
-    OmegaStart = RPM[j]/60 #*(2*pi)
+################################
+# Timoshenko Analysis
+################################
+freq = OWENSFEA.autoCampbellDiagram(feamodel,mesh,el,system,assembly,nothing;
+    rotSpdArrayRPM = RPM,
+    )
 
-    freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=OWENSFEA.modal(feamodel,mesh,el;Omega,OmegaStart)
-    # OWENS Frequencies that correspond to the GX beam are every other, and then 1,3,5 of the every other sets corresponds to the analytical
-    freqOWENS[j,:] = freq[1:2:nev]
-end
+freqOWENS = freq[:,1:2:nev]
+
+################################
+# GXBeam Analysis
+################################
+feamodel.analysisType = "GX"
+freq = OWENSFEA.autoCampbellDiagram(feamodel,mesh,el,system,assembly,nothing;
+    rotSpdArrayRPM = RPM,
+    )
+
+freqGXBeam = freq
 
 ###############################################
 ######## TEST
