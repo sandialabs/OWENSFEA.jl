@@ -1,8 +1,6 @@
 """
 frequencies = autoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
-    minRPM = 0.0,
-    maxRPM = 40.0,
-    NRPM = 9, # int
+    rotSpdArrayRPM = [0.0,40.0]
     VTKsavename = nothing,
     saveModes = [1,3,5], #must be int
     saveRPM = [1,3,5], #must be int
@@ -19,9 +17,7 @@ If FEAinputs.analysisType == "GX" and VTKsavename are specified, it will output 
 * `system::GXBeam.System`: the converted GXBeam system from the mesh and el
 * `assembly::GXBeam.AssemblyState`: the converted GXBeam assembly from the mesh and el
 * `sections::Array{Float64, 3}`: the 3D point cloud to be converted to VTK format
-* `minRPM::Float64`: minimum RPM to be run, e.x. 0.0
-* `maxRPM::Float64`: maximum RPM to be run e.x. 40.0
-* `NRPM::Int64`: number of linear discretizations of RPM e.x. 9 must be int
+* `rotSpdArrayRPM::Array{Float64, 1`: minimum to maximum RPM to be run, e.x. [0.0,5.0,15.0]
 * `VTKsavename::string`: filename (with path if desired) of the VTK outputs if GX.  Set to "nothing" to not save.
 * `saveModes::Array{Int64}`: The modes to save in the VTK outputs e.x. [1,3,5] must be int
 * `saveRPM::Array{Int64}`: The RPMs to save in the VTK outputs e.x. [1,3,5] must be int
@@ -31,16 +27,12 @@ If FEAinputs.analysisType == "GX" and VTKsavename are specified, it will output 
 * `frequency::Array{Float64}`: The output modal frequencies
 """
 function autoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
-    minRPM = 0.0,
-    maxRPM = 40.0,
-    NRPM = 9, # int
+    rotSpdArrayRPM = [0.0,40.0],
     VTKsavename = nothing,
-    saveModes = [1,3,5], #must be int
-    saveRPM = [1,3,5], #must be int
+    saveModes = [1], #must be int
+    saveRPM = [1], #must be int
     mode_scaling = 500.0,
     )
-
-    rotSpdArrayRPM = LinRange(minRPM,maxRPM,NRPM)
 
     # Campbell Diagram generation
     if FEAinputs.analysisType!="GX"
@@ -153,6 +145,7 @@ function autoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
         end
 
         if !isnothing(VTKsavename) #TODO: map the OWENS state into the gx state for filesaving
+            println("Saving Modeshapes to VTK")
             state = GXBeam.AssemblyState(system, assembly; prescribed_conditions=prescribed_conditions)
     
             try #this should error if someone on windows uses backslash '\'
@@ -166,7 +159,8 @@ function autoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
             end
             for isaveRPM in saveRPM
                 for isavemode in saveModes
-                    GXBeam.write_vtk("$(VTKsavename)_RPM$(rotSpdArrayRPM[isaveRPM])_Mode$(isavemode)_eigenmode", assembly, state, 
+                    rot_spd_str = replace(string(rotSpdArrayRPM[isaveRPM]), "." => "pt")
+                    GXBeam.write_vtk("$(VTKsavename)_RPM$(rot_spd_str)_Mode$(isavemode)_eigenmode", assembly, state, 
                         λ_save[isaveRPM][isavemode], eigenstates_save[isaveRPM][isavemode]; sections,mode_scaling)
                 end
             end
