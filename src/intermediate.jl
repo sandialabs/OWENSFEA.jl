@@ -10,7 +10,7 @@ function TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,dispData,Omega,elStorage;
     x = mesh.x
     y = mesh.y
     z = mesh.z
-    conn = Int.(mesh.conn)
+    conn = mesh.conn
 
     elementOrder = feamodel.elementOrder
     numNodesPerEl = elementOrder + 1

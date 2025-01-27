@@ -454,7 +454,7 @@ mutable struct Mesh
     y
     z
     elNum
-    conn
+    conn::Matrix{Int}
     type
     meshSeg
     structuralSpanLocNorm

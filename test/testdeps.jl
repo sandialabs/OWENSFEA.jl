@@ -19,7 +19,7 @@ function mesh_beam(;L1 = 31.5, #first section of beam length
     mesh_z1 = zero(mesh_x1)
 
     # intra-beam connectivity
-    conn1 = zeros(length(mesh_z1)-1,2)
+    conn1 = zeros(Int, length(mesh_z1) - 1, 2)
     conn1[:,1] = collect(1:length(mesh_z1)-1)
     conn1[:,2] = collect(2:length(mesh_z1))
 
@@ -29,7 +29,7 @@ function mesh_beam(;L1 = 31.5, #first section of beam length
     mesh_z2 = zero(mesh_x2)
 
     # intra-beam connectivity
-    conn2 = zeros(length(mesh_z2)-1,2)
+    conn2 = zeros(Int, length(mesh_z2) - 1, 2)
     conn2[:,1] = length(mesh_z1).+collect(1:length(mesh_z2)-1)
     conn2[:,2] = length(mesh_z1).+collect(2:length(mesh_z2))
 
@@ -70,7 +70,7 @@ function mesh_beam(;L1 = 31.5, #first section of beam length
     structuralElNumbers = []
     # end
 
-    mymesh = OWENSFEA.Mesh(round.(Int,nodeNum),round.(Int,numEl),round.(Int,numNodes),mesh_x,mesh_y,mesh_z,round.(Int,elNum),round.(Int,conn),meshtype,meshSeg,structuralSpanLocNorm,round.(Int,structuralNodeNumbers),round.(Int,structuralElNumbers))
+    mymesh = OWENSFEA.Mesh(round.(Int, nodeNum), round.(Int, numEl), round.(Int, numNodes), mesh_x, mesh_y, mesh_z, round.(Int, elNum), conn, meshtype, meshSeg, structuralSpanLocNorm, round.(Int, structuralNodeNumbers), round.(Int, structuralElNumbers))
 
     ####################################
     ##----------Joint Matrix----------##
@@ -260,8 +260,8 @@ function calculateElementOrientation(mesh)
     lenv = zeros(numEl)
     for i = 1:numEl #loop over elements
 
-        n1 = Int(mesh.conn[i,1]) #n1 := node number for node 1 of element i
-        n2 = Int(mesh.conn[i,2]) #n2 := node number for node 2 of element i
+        n1 = mesh.conn[i, 1] #n1 := node number for node 1 of element i
+        n2 = mesh.conn[i, 2] #n2 := node number for node 2 of element i
 
         p1 = [mesh.x[n1] mesh.y[n1] mesh.z[n1]] #nodal coordinates of n1
         p2 = [mesh.x[n2] mesh.y[n2] mesh.z[n2]] #nodal coordinates of n2
