@@ -46,9 +46,9 @@ function mesh_beam(;L1 = 31.5, #first section of beam length
     end
 
     numNodes = length(mesh_z)
-    nodeNum = collect(LinRange(1,numNodes,numNodes))
+    nodeNum = collect(Int, 1:numNodes)
     numEl = length(conn[:,1])
-    elNum = collect(LinRange(1,numEl,numEl))
+    elNum = collect(Int, 1:numEl)
 
     # Define Mesh Types
     # Mesh Type: 0-blade 1-tower 2-strut
@@ -65,12 +65,12 @@ function mesh_beam(;L1 = 31.5, #first section of beam length
     meshSeg[2] = Nelem2
 
     # Not used for the beam case
-    structuralSpanLocNorm = []
-    structuralNodeNumbers = []
-    structuralElNumbers = []
+    structuralSpanLocNorm = Float64[]
+    structuralNodeNumbers = Int[]
+    structuralElNumbers = Int[]
     # end
 
-    mymesh = OWENSFEA.Mesh(round.(Int, nodeNum), round.(Int, numEl), round.(Int, numNodes), mesh_x, mesh_y, mesh_z, round.(Int, elNum), conn, meshtype, meshSeg, structuralSpanLocNorm, round.(Int, structuralNodeNumbers), round.(Int, structuralElNumbers))
+    mymesh = OWENSFEA.Mesh(nodeNum, numEl, numNodes, mesh_x, mesh_y, mesh_z, elNum, conn, meshtype, meshSeg, structuralSpanLocNorm, structuralNodeNumbers, structuralElNumbers)
 
     ####################################
     ##----------Joint Matrix----------##
