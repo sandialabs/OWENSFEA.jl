@@ -447,23 +447,23 @@ Struct with mesh definition
 
 """
 mutable struct Mesh
-    nodeNum
-    numEl
-    numNodes
-    x
-    y
-    z
-    elNum
+    nodeNum::Vector{Int}
+    numEl::Int
+    numNodes::Int
+    x::Vector{Float64}
+    y::Vector{Float64}
+    z::Vector{Float64}
+    elNum::Vector{Int}
     conn::Matrix{Int}
-    type
-    meshSeg
-    structuralSpanLocNorm
-    structuralNodeNumbers
-    structuralElNumbers
-    nonRotating
-    hubNodeNum
-    hubPos
-    hubAngle
+    type::Vector{Int}
+    meshSeg::Vector{Int}
+    structuralSpanLocNorm::Vector{Float64}
+    structuralNodeNumbers::Vector{Int}
+    structuralElNumbers::Vector{Int}
+    nonRotating::Int
+    hubNodeNum::Int
+    hubPos::Vector{Float64}
+    hubAngle::Vector{Float64}
 end
 
 Mesh(nodeNum,numEl,numNodes,x,y,z,elNum,conn,type,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers) = Mesh(nodeNum,numEl,numNodes,x,y,z,elNum,conn,type,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,0,1,zeros(3),zeros(3))
