@@ -486,12 +486,12 @@ Struct with element orientation
 
 """
 mutable struct Ort
-    Psi_d
-    Theta_d
-    Twist_d
-    Length
-    elNum
-    Offset
+    Psi_d::Vector{Float64}
+    Theta_d::Vector{Float64}
+    Twist_d::Vector{Float64}
+    Length::Vector{Float64}
+    elNum::Vector{Float64}
+    Offset::Matrix{Float64}
 end
 
 """
