@@ -536,14 +536,9 @@ Internal, creates a map of unconstrained DOFs between a full listing and reduced
 """
 function constructReducedDispVectorMap(numNodes,numDofPerNode,numReducedDof,numpBC,pBC,isConstrained)
 
-    bcdoflist=zeros(Int, numpBC)
-
-    #create a listing of constrained DOFs from boundary condition file
-    for i=1:numpBC
-        bcnodenum = pBC[i,1]
-        bcdofnum = pBC[i,2]
-        bcdoflist[i] = (bcnodenum-1)*numDofPerNode + bcdofnum
-    end
+    # create a listing of constrained DOFs from boundary condition file
+    bcdoflist = Int[(bc.global_node - 1) * numDofPerNode + bc.local_dof for bc in pBC]
+    @assert length(bcdoflist) == numpBC
 
     dofList = calculateReducedDOFVector(numNodes,numDofPerNode,isConstrained) #calculate a reduced (unconstrained) DOF vector
 
@@ -578,17 +573,15 @@ Internal, creates a boundary condition map between full and reduced dof listing 
 #Output
 * `elStorage`         map for boundary conditions between full and reduced dof list
 """
-function calculateBCMap(numpBC,pBC,numDofPerNode,reducedDofList)
+function calculateBCMap(numpBC,pBC::Vector{ConstrainedDoF},numDofPerNode,reducedDofList)
 
-    constrainedDof = zeros(numpBC)
-    for i=1:numpBC
-        constrainedDof[i] = (pBC[i,1]-1)*numDofPerNode + pBC[i,2]  #creates an array of constrained DOFs
-    end
-    constrainedDof = sort(constrainedDof)
+    constrainedDof = Int[(bc.global_node - 1) * numDofPerNode + bc.local_dof for bc in pBC]
+    sort!(constrainedDof)
+    @assert numpBC == length(constrainedDof)
 
     reducedDOFCount = length(reducedDofList)
 
-    bcMap = zeros(reducedDOFCount)
+    bcMap = zeros(Int, reducedDOFCount)
     index = 1
     for i=1:reducedDOFCount
         if reducedDofList[i] in constrainedDof  #searches reduced DOF for constrained DOFs
@@ -1147,9 +1140,11 @@ function applyBC(Kg,Fg,BC,numDofPerNode)
         numpBC = size(pBC)[1]
         eqidx = findall(x->x==-1,BC.map)
         for i=1:numpBC
-            nodeNumber = Int(pBC[i,1])
-            dofNumber = Int(pBC[i,2])
-            specVal = pBC[i,3]
+            bc = pBC[i]
+            nodeNumber = bc.global_node
+            dofNumber = bc.local_dof
+            specVal = bc.value
+
 
             eqNumber = eqidx[i]#(nodeNumber-1)*numDofPerNode + dofNumber
 
@@ -1646,7 +1641,7 @@ Internal, usese the pBC matrix and calculates/stores boundary condition data
 * `BC:BC_struct` see ?BC_struct
 
 """
-function makeBCdata(pBC,numNodes,numDofPerNode,reducedDOFList,jointTransform)
+function makeBCdata(pBC::Vector{ConstrainedDoF},numNodes,numDofPerNode,reducedDOFList,jointTransform)
 
     totalNumDof = numNodes*numDofPerNode
 
@@ -1657,18 +1652,12 @@ function makeBCdata(pBC,numNodes,numDofPerNode,reducedDOFList,jointTransform)
     #constrained)
 
     #calculate constrained dof vector
-    isConstrained = zeros(totalNumDof)
-    constDof = (pBC[:,1].-1)*numDofPerNode + pBC[:,2]
-    index = 1
-    for i=1:numNodes
-        for j=1:numDofPerNode
-            if ((i-1)*numDofPerNode + j in constDof)
-                isConstrained[index] = 1
-            end
-            index = index + 1
-        end
+    isConstrained = zeros(Int, totalNumDof) # XXX Bool
+    for bc in pBC
+        global_dof = (bc.global_node - 1) * numDofPerNode + bc.local_dof
+        isConstrained[global_dof] = true
     end
-    numpBC = length(pBC[:,1])
+    numpBC = length(pBC)
 
     map = calculateBCMap(numpBC,pBC,numDofPerNode,reducedDOFList)
     numReducedDof = length(jointTransform[1,:])

@@ -1,3 +1,9 @@
+struct ConstrainedDoF
+    global_node::Int
+    local_dof::Int
+    value::Float64
+end
+
 mutable struct FEAModel
     analysisType
     initCond
@@ -122,7 +128,7 @@ function FEAModel(;analysisType = "TNB",
     nlParams = 0,
     alpha = 0.5,
     gamma = 0.5,
-    pBC = 0,
+    pBC::Union{Vector{ConstrainedDoF}, Matrix, Nothing} = nothing,
     nodalTerms = 0.0,
     iterationType = "NR",
     adaptiveLoadSteppingFlag = true,
@@ -143,9 +149,16 @@ function FEAModel(;analysisType = "TNB",
         nodalTerms = applyConcentratedTerms(numNodes, numDOFPerNode)
     end
 
-    if pBC!=0
-        BC = makeBCdata(pBC,numNodes,numDOFPerNode,reducedDOFList,jointTransform)
+    # TODO: Remove this temporary conversion
+    if pBC isa Matrix
+        pBC = [ConstrainedDoF(pBC[i, 1], pBC[i, 2], pBC[i, 3]) for i in axes(pBC, 1)]
+    end
+
+    if pBC !== nothing
+        BC = makeBCdata(pBC, numNodes, numDOFPerNode, reducedDOFList, jointTransform)
     else
+        @assert pBC === nothing
+        # TODO: Fill in this properly
         BC = OWENSFEA.BC_struct(0,
         0,
         0,
@@ -498,13 +511,13 @@ end
 Internal, boundary condition data, see ?FEAModel for pBC
 """
 mutable struct BC_struct
-    numpBC
-    pBC
-    numsBC
-    nummBC
-    isConstrained
-    map
-    redVectorMap
+    numpBC::Int
+    pBC::Vector{ConstrainedDoF}
+    numsBC::Int
+    nummBC::Int
+    isConstrained::Vector{Int} # ::Vector{Bool}
+    map::Vector{Int}
+    redVectorMap::Vector{Int}
 end
 
 """
