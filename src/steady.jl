@@ -30,7 +30,7 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
     # x = mesh.x
     # y = mesh.y
     # z = mesh.z
-    conn = Int.(mesh.conn)
+    conn = mesh.conn
     # omegaVec       = zeros(3)
     # omegaDotVec    = zeros(3)
     # accelVec       = zeros(3)

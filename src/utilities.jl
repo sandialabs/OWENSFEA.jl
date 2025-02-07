@@ -366,81 +366,31 @@ function extractdaInfo(joint,numNodes,numDofPerNode)
 
     adNumDof = numNodes*numDofPerNode; #total number of DOFs (active and dependent)
 
-    numJoints=size(joint)[1] #get number of joints
+    numJoints = size(joint, 1) #get number of joints
 
-    #Get Count
-    dependentCount = 0
-    count = 1
-    for i=1:numJoints #loop over number of joints
-        if (joint[i,4]==0 || joint[i,4]==5) #for a "fixed/weld" joint type or rigid bar constraint
-            for j=1:6
-                count = count + 1;
-            end
-
-        end
-
-        if (joint[i,4]==1) #for a "pinned" joint type
-            for j=1:3
-                count = count + 1;
-            end
-        end
-
-        if (joint[i,4]==2) #for a single axis hinge joint along a local "2" axis of a joint
-            for j=1:5
-                count = count + 1;
-            end
-        end
-
-        if (joint[i,4]==3) #for a single axis hinge =joint along a local "1" axis of a joint
-            for j=1:5
-                count = count + 1;
-            end
-        end
-
-        if (joint[i,4]==4) #for a single axis hinge joint along a local "3" axis of a joint
-            for j=1:5
-                count = count + 1;
-            end
-        end
-
-    end
-
-    slaveDof = zeros(count)
-    count = 1
+    # Compute dependent dofs
+    slaveDof = Int[]
     for i=1:numJoints #loop over number of joints
         if (joint[i,4]==0 || joint[i,4]==5) #for a "fixed/weld" joint type or rigid bar constraint
             con = [1 2 3 4 5 6] #all DOFs of a slave node are constrained
-            dependentCount = dependentCount + 6 #increment number of dependent DOFs
             for j=1:6
-                slaveDof[count] = numDofPerNode*(joint[i,3]-1) + con[j] #assign slave DOFs (joint(i,3) is the slave node number associated with this joint
-                count = count + 1
+                push!(slaveDof, numDofPerNode * (joint[i, 3] - 1) + con[j]) #assign slave DOFs (joint(i,3) is the slave node number associated with this joint
             end
-
-        end
-
-        if (joint[i,4]==1) #for a "pinned" joint type
+        elseif (joint[i, 4] == 1) #for a "pinned" joint type
             con = [1 2 3] #only translational (first 3) DOFs of a slave node are  constrained
-            dependentCount = dependentCount + 3 #increment number of dependent DOFs
             for j=1:3
-                slaveDof[count] = numDofPerNode*(joint[i,3]-1) + con[j] #assign slave DOFs (joint(i,3) is the slave node number associated with this joint
-                count = count + 1
+                push!(slaveDof, numDofPerNode * (joint[i, 3] - 1) + con[j])
             end
-        end
-
-        if (joint[i,4]==2) #for a single axis hinge joint along a local "2" axis of a joint
+        elseif (joint[i, 4] == 2) #for a single axis hinge joint along a local "2" axis of a joint
             if ((abs(abs(joint[i,7])-90))<1.0e-3 || (abs(abs(joint[i,7])-270))<1.0e-3)
                 con=[1 2 3 5 6]
             else
                 con=[1 2 3 4 6] #all but 5th DOF of a  slave node are constrained
             end
-            dependentCount = dependentCount + 5 #increment number of dependent DOFs
             for j=1:5
-                slaveDof[count] = numDofPerNode*(joint[i,3]-1) + con[j] #assign slave DOFs (joint(i,3) is the slave node number associated with this joint
-                count = count + 1
+                push!(slaveDof, numDofPerNode * (joint[i, 3] - 1) + con[j])
             end
-        end
-
-        if (joint[i,4]==3) #for a single axis hinge =joint along a local "1" axis of a joint
+        elseif (joint[i, 4] == 3) #for a single axis hinge =joint along a local "1" axis of a joint
             if ((abs(abs(joint[i,8])-90))<1.0e-3 || (abs(abs(joint[i,8])-270))<1.0e-3)
                 con = [1 2 3 4 5]
             elseif ((abs(abs(joint[i,7])-90))<1.0e-3 || (abs(abs(joint[i,7])-270))<1.0e-3)
@@ -448,14 +398,10 @@ function extractdaInfo(joint,numNodes,numDofPerNode)
             else
                 con = [1 2 3 5 6] #all but the 4th DOF of a slave node are constrained
             end
-            dependentCount = dependentCount + 5 #increment number of dependent DOFs
             for j=1:5
-                slaveDof[count] = numDofPerNode*(joint[i,3]-1) + con[j] #assign slave DOFs (joint(i,3) is the slave node number associated with this joint
-                count = count + 1
+                push!(slaveDof, numDofPerNode * (joint[i, 3] - 1) + con[j])
             end
-        end
-
-        if (joint[i,4]==4) #for a single axis hinge joint along a local "3" axis of a joint
+        elseif (joint[i, 4] == 4) #for a single axis hinge joint along a local "3" axis of a joint
             if ((abs(abs(joint[i,8])-90))<1.0e-3 || (abs(abs(joint[i,8])-270))<1.0e-3)
                 con = [1 2 3 5 6]
                 if ((abs(abs(joint[i,7])-90))<1.0e-3 || (abs(abs(joint[i,7])-270))<1.0e-3)
@@ -464,16 +410,14 @@ function extractdaInfo(joint,numNodes,numDofPerNode)
             else
                 con = [1 2 3 4 5]
             end
-            dependentCount = dependentCount + 5 #all but the 6th DOF of a slave node are constrained
             for j=1:5
-                slaveDof[count] = numDofPerNode*(joint[i,3]-1) + con[j] #assign slave DOFs (joint(i,3) is the slave node number associated with this joint
-                count = count + 1
+                push!(slaveDof, numDofPerNode * (joint[i, 3] - 1) + con[j])
             end
         end
 
     end
 
-    aNumDof = adNumDof - dependentCount #calculate number of active DOFs in the model
+    aNumDof = adNumDof - length(slaveDof) #calculate number of active DOFs in the model
 
     return adNumDof,aNumDof,slaveDof
 

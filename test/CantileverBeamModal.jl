@@ -182,7 +182,7 @@ pBC = [1 1 0
 1 6 0]
 
 feamodel = OWENSFEA.FEAModel(;analysisType = "M",
-outFilename = "none",
+dataOutputFilename = "none",
 joint = joint,
 gravityOn = false,
 platformTurbineConnectionNodeNumber = 1,

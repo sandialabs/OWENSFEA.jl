@@ -7,7 +7,7 @@ mutable struct FEAModel
     gravityOn
     nlOn
     spinUpOn
-    outFilename
+    dataOutputFilename
     RayleighAlpha
     RayleighBeta
     elementOrder
@@ -34,7 +34,7 @@ end
         gravityOn = true,
         nlOn = false,
         spinUpOn = false,
-        outFilename = "none",
+        dataOutputFilename = "none",
         RayleighAlpha = 0.0,
         RayleighBeta = 0.0,
         elementOrder = 1,
@@ -69,7 +69,7 @@ Model inputs for FEA analysis, struct
 * `gravityOn::Bool orArray{<:float}`: vector of 3 or flag to include distributed gravity acceleration (9.81m/s) in the negative z-direction
 * `nlOn::Bool`: flag for solver to calculate deflection induced stiffness changes and associated convergance to the coupled solution
 * `spinUpOn::Bool`: flag to perform a static analysis (warm start) prior to performing modal analysis
-* `outFilename::string`: /path/to/desired/output/filename if it doesn't exist already it is created, if exists, is overwritten
+* `dataOutputFilename::string`: /path/to/desired/output/filename if it doesn't exist already it is created, if exists, is overwritten
 * `RayleighAlpha::float`: Rayleigh alpha damping used in timoshenko beam damping matrix
 * `RayleighBeta::float`: Rayleigh beta damping used in timoshenko beam damping matrix
 * `elementOrder::int`: order of element: 1 linear, 2 quadratic
@@ -108,7 +108,7 @@ function FEAModel(;analysisType = "TNB",
     gravityOn = true,
     nlOn = false,
     spinUpOn = false,
-    outFilename = "none",
+    dataOutputFilename = "none",
     RayleighAlpha = 0.0,
     RayleighBeta = 0.0,
     elementOrder = 1,
@@ -162,7 +162,7 @@ function FEAModel(;analysisType = "TNB",
     end
 
     return FEAModel(analysisType,initCond,aeroElasticOn,guessFreq,airDensity,
-    gravityOn,nlOn,spinUpOn,outFilename,RayleighAlpha,RayleighBeta,elementOrder,joint,
+    gravityOn,nlOn,spinUpOn,dataOutputFilename,RayleighAlpha,RayleighBeta,elementOrder,joint,
     platformTurbineConnectionNodeNumber,jointTransform,reducedDOFList,nlParams,BC,nodalTerms,numModes,AddedMass_Coeff_Ca)
 end
 
@@ -447,23 +447,23 @@ Struct with mesh definition
 
 """
 mutable struct Mesh
-    nodeNum
-    numEl
-    numNodes
-    x
-    y
-    z
-    elNum
-    conn
-    type
-    meshSeg
-    structuralSpanLocNorm
-    structuralNodeNumbers
-    structuralElNumbers
-    nonRotating
-    hubNodeNum
-    hubPos
-    hubAngle
+    nodeNum::Vector{Int}
+    numEl::Int
+    numNodes::Int
+    x::Vector{Float64}
+    y::Vector{Float64}
+    z::Vector{Float64}
+    elNum::Vector{Int}
+    conn::Matrix{Int}
+    type::Vector{Int}
+    meshSeg::Vector{Int}
+    structuralSpanLocNorm::Matrix{Float64}
+    structuralNodeNumbers::Matrix{Int}
+    structuralElNumbers::Matrix{Int}
+    nonRotating::Int
+    hubNodeNum::Int
+    hubPos::Vector{Float64}
+    hubAngle::Vector{Float64}
 end
 
 Mesh(nodeNum,numEl,numNodes,x,y,z,elNum,conn,type,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers) = Mesh(nodeNum,numEl,numNodes,x,y,z,elNum,conn,type,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,0,1,zeros(3),zeros(3))
@@ -486,12 +486,12 @@ Struct with element orientation
 
 """
 mutable struct Ort
-    Psi_d
-    Theta_d
-    Twist_d
-    Length
-    elNum
-    Offset
+    Psi_d::Vector{Float64}
+    Theta_d::Vector{Float64}
+    Twist_d::Vector{Float64}
+    Length::Vector{Float64}
+    elNum::Matrix{Float64}
+    Offset::Matrix{Float64}
 end
 
 """
