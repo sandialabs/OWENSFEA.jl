@@ -148,7 +148,7 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
     for reactionNodeNumber = 1:mesh.numEl
         try
             countedNodes = [] #TODO:??
-            FReaction[(reactionNodeNumber-1)*6+1:reactionNodeNumber*6] = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ,rbData,Omega,OmegaDot,CN2H,countedNodes;single_element_reaction=true)
+            FReaction[(reactionNodeNumber-1)*6+1:reactionNodeNumber*6] = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ,rbData,Omega,OmegaDot,CN2H,countedNodes)
         catch
             # This is where a joint is println(reactionNodeNumber)
         end

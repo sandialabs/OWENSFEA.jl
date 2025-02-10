@@ -59,13 +59,6 @@ function autoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
         ########################################
 
         prescribed_conditions  = setPrescribedConditions(mymesh;pBC=FEAinputs.BC.pBC)#,Fexternal,ForceDof)
-        
-        # prescribed_conditions = Dict(
-        #     # fixed base
-        #     1 => PrescribedConditions(ux=0, uy=0, uz=0, theta_x=0, theta_y=0, theta_z=0),
-        #     # fixed top, but free to rotate around z-axis
-        #     top_idx => PrescribedConditions(ux=0, uy=0, uz=0, theta_x=0, theta_y=0),
-        # )
 
         # --- Perform Analysis --- #
 
@@ -85,7 +78,7 @@ function autoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
             a_y_n = FEAinputs.gravityOn[2]
             a_z_n = FEAinputs.gravityOn[3]
         end
-        gravity = [a_x_n, a_y_n, a_z_n] #TODO: from FEAinputs
+        gravity = [a_x_n, a_y_n, a_z_n]
 
         # number of modes
         nmode = FEAinputs.numModes
