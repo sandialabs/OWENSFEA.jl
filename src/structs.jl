@@ -447,23 +447,23 @@ Struct with mesh definition
 
 """
 mutable struct Mesh
-    nodeNum
-    numEl
-    numNodes
-    x
-    y
-    z
-    elNum
-    conn
-    type
-    meshSeg
-    structuralSpanLocNorm
-    structuralNodeNumbers
-    structuralElNumbers
-    nonRotating
-    hubNodeNum
-    hubPos
-    hubAngle
+    nodeNum::Vector{Int}
+    numEl::Int
+    numNodes::Int
+    x::Vector{Float64}
+    y::Vector{Float64}
+    z::Vector{Float64}
+    elNum::Vector{Int}
+    conn::Matrix{Int}
+    type::Vector{Int}
+    meshSeg::Vector{Int}
+    structuralSpanLocNorm::Vector{Float64}
+    structuralNodeNumbers::Vector{Int}
+    structuralElNumbers::Vector{Int}
+    nonRotating::Int
+    hubNodeNum::Int
+    hubPos::Vector{Float64}
+    hubAngle::Vector{Float64}
 end
 
 Mesh(nodeNum,numEl,numNodes,x,y,z,elNum,conn,type,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers) = Mesh(nodeNum,numEl,numNodes,x,y,z,elNum,conn,type,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,0,1,zeros(3),zeros(3))
@@ -486,12 +486,12 @@ Struct with element orientation
 
 """
 mutable struct Ort
-    Psi_d
-    Theta_d
-    Twist_d
-    Length
-    elNum
-    Offset
+    Psi_d::Vector{Float64}
+    Theta_d::Vector{Float64}
+    Twist_d::Vector{Float64}
+    Length::Vector{Float64}
+    elNum::Vector{Float64}
+    Offset::Matrix{Float64}
 end
 
 """

@@ -38,13 +38,13 @@ function initialElementCalculations(feamodel,el,mesh)
 
         for j=1:numNodesPerEl
             #get element cooridnates
-            elx[j] = mesh.x[Int(mesh.conn[i,j])]
-            ely[j] = mesh.y[Int(mesh.conn[i,j])]
-            elz[j] = mesh.z[Int(mesh.conn[i,j])]
+            elx[j] = mesh.x[mesh.conn[i, j]]
+            ely[j] = mesh.y[mesh.conn[i, j]]
+            elz[j] = mesh.z[mesh.conn[i, j]]
         end
 
         #get concentrated terms associated with element # TODO: This is redundant and can probably be cleaned up, and might mess up double counting?
-        _, massConc, _, _, countedNodes = getElementConcTerms!(feamodel.nodalTerms.concStiff, feamodel.nodalTerms.concMass, feamodel.nodalTerms.concDamp, feamodel.nodalTerms.concLoad, Int.(mesh.conn[i,:]), numDOFPerNode, countedNodes)
+        _, massConc, _, _, countedNodes = getElementConcTerms!(feamodel.nodalTerms.concStiff, feamodel.nodalTerms.concMass, feamodel.nodalTerms.concDamp, feamodel.nodalTerms.concLoad, mesh.conn[i, :], numDOFPerNode, countedNodes)
 
         concMassFlag = !isempty(findall(x->x!=0,massConc))
 
@@ -84,7 +84,7 @@ performs unsteady structural dynamics analysis
 function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,time,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData;predef=nothing)
 
     #-------- get feamodel information -----------
-    conn = Int.(mesh.conn) #TODO: make the generator output ints
+    conn = mesh.conn
     iterationType = feamodel.nlParams.iterationType #"NR" "DI" "LINEAR"
     analysisType = feamodel.analysisType
 
