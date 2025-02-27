@@ -102,8 +102,12 @@ function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,t
     totalNumDOF = mesh.numNodes * numDOFPerNode
     eldisp = zeros(numNodesPerEl*numDOFPerNode)
     eldisp_sm1 = zeros(numNodesPerEl*numDOFPerNode)
-    Kg1 = zeros(totalNumDOF,totalNumDOF) #initialize global stiffness and force vector
-    Fg1 = zeros(totalNumDOF)
+
+    TT = eltype(elStorage[1].K11)
+
+    Kg1 = zeros(TT, totalNumDOF,totalNumDOF) #initialize global stiffness and force vector
+    Fg1 = zeros(TT, totalNumDOF)
+
     eldispdot = zero(eldisp)
     eldispddot = zero(eldisp)
     eldispiter = zero(eldisp)
@@ -279,8 +283,9 @@ function mapMatrixNonSym2(K11,K12,K13,K14,K15,K16,K21,K22,K23,K24,K25,K26,K31,K3
     0 0 0 0 0 1 0 0 0 0 0 0;
     0 0 0 0 0 0 0 0 0 0 0 1];
 
-    Ktemp = zeros(12,12)
+    S =  promote_type(eltype.((K11,K12,K13,K14,K15,K16,K21,K22,K23,K24,K25,K26,K31,K32,K33,K34,K35,K36,K41,K42,K43,K44,K45,K46,K51,K52,K53,K54,K55,K56,K61,K62,K63,K64,K65,K66))...)
 
+    Ktemp = zeros(S, 12,12)
     Ktemp[1:2,1:2] = K11
     Ktemp[1:2,3:4] = K12
     Ktemp[1:2,5:6] = K13

@@ -68,8 +68,9 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
     tolerance = nlParams.tolerance
     # timeInt = TimeInt(0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0) #not used
     eldisp = zeros(numNodesPerEl*numDOFPerNode)
-    Kg1 = zeros(totalNumDOF,totalNumDOF)   #initialize global stiffness matrix
-    Fg1 = zeros(totalNumDOF)             #initialize global force vector
+    TT = eltype(elStorage[1].K11)
+    Kg1 = zeros(TT, totalNumDOF,totalNumDOF)   #initialize global stiffness matrix
+    Fg1 = zeros(TT, totalNumDOF)             #initialize global force vector
     #.........................................................................
     while !staticAnalysisComplete && loadStepCount<maxNumLoadSteps
         # staticAnalysisSuccessful = false #initialize staticAnalysisSuccessful flag

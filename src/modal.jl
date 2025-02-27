@@ -229,6 +229,37 @@ function modal(feamodel,mesh,el;Omega=0.0,displ=zeros(mesh.numNodes*6),OmegaStar
     U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90,displ,eigVal,eigVec
 end
 
+#function modal2(feamodel::FEAModel2, mesh::Mesh2, el; Omega = 0.0, displ = zeros(mesh.numNodes * 6), OmegaStart = 0.0, returnDynMatrices = false, elStorage = nothing, predef = nothing)
+
+#    if elStorage === nothing
+#        elStorage = initialElementCalculations(feamodel, el, mesh) #performs initial element calculations
+#    end
+#    # [structureMass,structureMOI,structureMassCenter]=calculateStructureMassProps(elStorage) #calculate mass properties of structure
+
+#    #Do nonlinear iteration if needed
+#    if feamodel.spinUpOn
+#        feamodel.aeroElasticOn = false
+#        displ, _, staticAnalysisSuccessful = staticAnalysis(
+#            feamodel, mesh, el, displ, Omega,
+#            OmegaStart, elStorage
+#        ) #performs static analysis about specified operating condition
+#    else
+#        staticAnalysisSuccessful = true
+#    end
+
+#    if staticAnalysisSuccessful
+#        freq, damp, imagCompSign, U_x_0, U_y_0, U_z_0, theta_x_0, theta_y_0, theta_z_0, U_x_90,
+#            U_y_90, U_z_90, theta_x_90, theta_y_90, theta_z_90, eigVal, eigVec = linearAnalysisModal(
+#            feamodel,
+#            mesh, el, displ, Omega, elStorage; returnDynMatrices, predef
+#        ) #performs modal analysis
+#    else
+#        error("Static analysis unsuccessful. Exiting")
+#    end
+#    return freq, damp, imagCompSign, U_x_0, U_y_0, U_z_0, theta_x_0, theta_y_0, theta_z_0,
+#        U_x_90, U_y_90, U_z_90, theta_x_90, theta_y_90, theta_z_90, displ, eigVal, eigVec
+#end
+
 """
 Internal, see ?modal
 """
@@ -288,7 +319,7 @@ function  linearAnalysisModal(feamodel,mesh,el,displ,Omega,elStorage;returnDynMa
         MAT.write(file,"MgTotalM",MgTotal)
         MAT.write(file,"CgTotalM",CgTotal)
         MAT.write(file,"jointTransform",feamodel.jointTransform)
-        MAT.write(file,"BC",feamodel.BC)
+        # MAT.write(file,"BC",feamodel.BC) # XXX: TODO
         MAT.write(file,"mesh",mesh)
         close(file)
     end
@@ -514,9 +545,8 @@ function constructReducedDispVecFromEigVec(vec1,reducedDOFList,BC)
     bcdoflist=zeros(1,BC.numpBC)
     #form pBC DOF list
     for i=1:BC.numpBC
-        bcnodenum = BC.pBC[i,1]
-        bcdofnum = BC.pBC[i,2]
-        bcdoflist[i] = (bcnodenum-1)*6 + bcdofnum
+        bc = BC.pBC[i]
+        bcdoflist[i] = (bc.global_node-1)*6 + bc.local_dof
     end
 
     index = 1
