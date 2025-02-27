@@ -195,7 +195,8 @@ function TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,dispData,Omega,elStorage;
                         eldispddot[index] = dispddot_s[(conn[i,j]-1)*numDOFPerNode + k]
                     end
                 elseif analysisType=="M" || analysisType=="ROM"
-                    eldisp[index] = displ[(conn[i,j]-1)*numDOFPerNode + k]
+                    # eldisp[index] = displ[(conn[i,j]-1)*numDOFPerNode + k]
+                    eldisp[index] = Main.ForwardDiff.value(displ[(conn[i,j]-1)*numDOFPerNode + k])
                 end
                 index = index + 1
             end

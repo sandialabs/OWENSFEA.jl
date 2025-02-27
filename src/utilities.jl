@@ -1262,7 +1262,7 @@ function calculateStrainForElements(numEl,numNodesPerEl,numDOFPerNode,conn,eleme
         eldisp = zeros(1,numNodesPerEl*numDOFPerNode)
         for j=1:numNodesPerEl       #define element coordinates and displacements associated with element
             for k=1:numDOFPerNode
-                eldisp[index] = displ[(conn[i,j]-1)*numDOFPerNode + k] #TODO: add in logic that if it is on a constrained/joint node that it uses the displacement from the prior?
+                eldisp[index] = Main.ForwardDiff.value(displ[(conn[i,j]-1)*numDOFPerNode + k]) #TODO: add in logic that if it is on a constrained/joint node that it uses the displacement from the prior?
                 index = index + 1
             end
         end
@@ -1659,6 +1659,7 @@ function makeBCdata(pBC::Vector{ConstrainedDoF},numNodes,numDofPerNode,reducedDO
     end
     numpBC = length(pBC)
 
+    # XXX: What is the difference between `map` and redVectorMap`?
     map = calculateBCMap(numpBC,pBC,numDofPerNode,reducedDOFList)
     numReducedDof = length(jointTransform[1,:])
     redVectorMap = constructReducedDispVectorMap(numNodes,numDofPerNode,numReducedDof,numpBC,pBC,isConstrained) #create a map between reduced and full DOF lists

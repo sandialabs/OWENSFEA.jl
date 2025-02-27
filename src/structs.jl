@@ -470,9 +470,9 @@ mutable struct Mesh
     conn::Matrix{Int}
     type::Vector{Int}
     meshSeg::Vector{Int}
-    structuralSpanLocNorm::Vector{Float64}
-    structuralNodeNumbers::Vector{Int}
-    structuralElNumbers::Vector{Int}
+    structuralSpanLocNorm::Matrix{Float64} # TODO: A column per blade?
+    structuralNodeNumbers::Matrix{Int} # TODO: Above
+    structuralElNumbers::Matrix{Int} # TODO: Above
     nonRotating::Int
     hubNodeNum::Int
     hubPos::Vector{Float64}
@@ -503,7 +503,7 @@ mutable struct Ort
     Theta_d::Vector{Float64}
     Twist_d::Vector{Float64}
     Length::Vector{Float64}
-    elNum::Vector{Float64}
+    elNum::Matrix{Int} # TODO: ?? Vector{Float64}
     Offset::Matrix{Float64}
 end
 
