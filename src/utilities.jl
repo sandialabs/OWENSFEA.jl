@@ -673,7 +673,7 @@ Internal, forms total force vector and transform to desired DOF mapping
 function mapVector(Ftemp)
 
     a=length(Ftemp)
-    Fel=zeros(a)
+    Fel=zeros(eltype(Ftemp), a)
 
     # #declare map
     map = [1, 7, 2, 8, 3, 9, 4, 10, 5, 11, 6, 12]
@@ -1531,7 +1531,9 @@ function calculateLoadVecFromDistForce(elementOrder,x,xloc,twist,sweepAngle,cone
     #Initialize element sub matrices and sub vectors
     numNodesPerEl = length(x)
 
-    F1 = zeros(numNodesPerEl,1)
+    TT = eltype(extDistF2Node)
+
+    F1 = zeros(TT, numNodesPerEl,1)
     F3 = zero(F1)
     F2 = zero(F1)
     F4 = zero(F1)

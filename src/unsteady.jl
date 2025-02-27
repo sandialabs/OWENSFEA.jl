@@ -102,8 +102,12 @@ function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,t
     totalNumDOF = mesh.numNodes * numDOFPerNode
     eldisp = zeros(numNodesPerEl*numDOFPerNode)
     eldisp_sm1 = zeros(numNodesPerEl*numDOFPerNode)
-    Kg1 = zeros(totalNumDOF,totalNumDOF) #initialize global stiffness and force vector
-    Fg1 = zeros(totalNumDOF)
+
+    TT = eltype(elStorage[1].K11)
+
+    Kg1 = zeros(TT, totalNumDOF,totalNumDOF) #initialize global stiffness and force vector
+    Fg1 = zeros(TT, totalNumDOF)
+
     eldispdot = zero(eldisp)
     eldispddot = zero(eldisp)
     eldispiter = zero(eldisp)
