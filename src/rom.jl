@@ -326,7 +326,7 @@ function  structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega,OmegaDo
 
 					for j=1:numNodesPerEl
 
-						elx[j] = x[conn[i,j]]
+						elx[j] = x[conn[i,j]] # XXX: Why does this only use the x-coordinate?
 
 						#get element nodal displacements at s and s-1 time step
 						for k=1:numDOFPerNode

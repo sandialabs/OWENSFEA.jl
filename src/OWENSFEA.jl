@@ -21,4 +21,10 @@ include("steady.jl")
 include("rom.jl")
 include("intermediate.jl")
 
+include("newstructs.jl")
+
+if false
+    include("../mwe.jl")
+end
+
 end

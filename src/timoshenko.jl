@@ -13,7 +13,9 @@ function calculateTimoshenkoElementInitialRun(elementOrder,modalFlag,xloc,sectio
     #Initialize element sub matrices and sub vectors
     numNodesPerEl = length(x)
 
-    K11 = zeros(numNodesPerEl,2)
+    T = eltype(sectionProps.EA)
+
+    K11 = zeros(T, numNodesPerEl,2)
     K12 = zero(K11)
     K13 = zero(K11)
     K14 = zero(K11)
@@ -474,7 +476,9 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
     SS33 = zero(SS22)
 
     #initialize nonlinear element matrices, only used if (useDisp)
-    K12NL = zeros(numNodesPerEl,numNodesPerEl)
+
+    T = eltype(sectionProps.EA)
+    K12NL = zeros(T, numNodesPerEl,numNodesPerEl)
     K13NL = zero(K12NL)
     K22NL = zero(K12NL)
     K23NL = zero(K12NL)
