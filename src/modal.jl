@@ -281,7 +281,7 @@ function  linearAnalysisModal(feamodel,mesh,el,displ,Omega,elStorage;returnDynMa
         MAT.write(file,"MgTotalM",MgTotal)
         MAT.write(file,"CgTotalM",CgTotal)
         MAT.write(file,"jointTransform",feamodel.jointTransform)
-        MAT.write(file,"BC",feamodel.BC)
+        # MAT.write(file,"BC",feamodel.BC) # XXX: TODO
         MAT.write(file,"mesh",mesh)
         close(file)
     end
@@ -507,9 +507,8 @@ function constructReducedDispVecFromEigVec(vec1,reducedDOFList,BC)
     bcdoflist=zeros(1,BC.numpBC)
     #form pBC DOF list
     for i=1:BC.numpBC
-        bcnodenum = BC.pBC[i,1]
-        bcdofnum = BC.pBC[i,2]
-        bcdoflist[i] = (bcnodenum-1)*6 + bcdofnum
+        bc = BC.pBC[i]
+        bcdoflist[i] = (bc.global_node-1)*6 + bc.local_dof
     end
 
     index = 1
