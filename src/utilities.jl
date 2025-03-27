@@ -1210,38 +1210,24 @@ joint constraints.
 #Output
 * `cummulativeForce`:  vector containing reaction force at nodeNum
 """
-function calculateReactionForceAtNode(nodeNum,model,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H,countedNodes;single_element_reaction=false)
-    
-    numDofPerNode = 6
-    cummulativeForce = zeros(numDofPerNode) #initialize force at node
-
+function calculateReactionForceAtNode(nodeNum,model,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H,countedNodes)
     #process elements for nodal reaction forces and compile to find total
     #reaction force at specified node
-    if single_element_reaction
-        numNodesPerEl = model.elementOrder + 1
-        eldisp = zeros(numNodesPerEl*numDofPerNode)
-    
-        Fpp = TimoshenkoMatrixWrap!(model,mesh,el,eldisp,dispData,Omega,elStorage;
-            rbData,CN2H,OmegaDot,displ_im1=displ_iter,timeInt,postprocess=true,elementNumber=nodeNum,countedNodes)
-    
-        localNode = 2
-        cummulativeForce = cummulativeForce + Fpp[(localNode-1)*numDofPerNode+1:(localNode-1)*numDofPerNode+6]
-    else
-        #find elements associated with nodeNum due to mesh connectivity or constraints
-        elList,elListLocalNodeNumbers = findElementsAssociatedWithNodeNumber(nodeNum,mesh.conn ,model.joint)
 
-        for i=1:length(elList)
+    #find elements associated with nodeNum due to mesh connectivity or constraints
+    elList,elListLocalNodeNumbers = findElementsAssociatedWithNodeNumber(nodeNum,mesh.conn ,model.joint)
+    numDOFPerNode = 6 #TODO: get from structs
+    i=1 #the function below calculates the reaction force for the nodNum specified, no need to iterate
 
-            numNodesPerEl = model.elementOrder + 1
-            eldisp = zeros(numNodesPerEl*numDofPerNode)
-        
-            Fpp = TimoshenkoMatrixWrap!(model,mesh,el,eldisp,dispData,Omega,elStorage;
-                rbData,CN2H,OmegaDot,displ_im1=displ_iter,timeInt,postprocess=true,elementNumber=elList[i],countedNodes)
-        
-            localNode = elListLocalNodeNumbers[i]
-            cummulativeForce = cummulativeForce + Fpp[(localNode-1)*numDofPerNode+1:(localNode-1)*numDofPerNode+6]
-        end
-    end
+    numNodesPerEl = model.elementOrder + 1
+    eldisp = zeros(numNodesPerEl*numDOFPerNode)
+
+    Fpp = TimoshenkoMatrixWrap!(model,mesh,el,eldisp,dispData,Omega,elStorage;
+        rbData,CN2H,OmegaDot,displ_im1=displ_iter,timeInt,postprocess=true,elementNumber=elList[i],countedNodes)
+
+    localNode = elListLocalNodeNumbers[i]
+    cummulativeForce = Fpp[(localNode-1)*numDOFPerNode+1:(localNode-1)*numDOFPerNode+6]
+
     return cummulativeForce
 end
 

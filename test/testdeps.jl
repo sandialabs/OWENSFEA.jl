@@ -65,9 +65,9 @@ function mesh_beam(;L1 = 31.5, #first section of beam length
     meshSeg[2] = Nelem2
 
     # Not used for the beam case
-    structuralSpanLocNorm = Float64[]
-    structuralNodeNumbers = Int[]
-    structuralElNumbers = Int[]
+    structuralSpanLocNorm = zeros(1,1)
+    structuralNodeNumbers = zeros(Int,1,1)
+    structuralElNumbers = zeros(Int,1,1)
     # end
 
     mymesh = OWENSFEA.Mesh(nodeNum, numEl, numNodes, mesh_x, mesh_y, mesh_z, elNum, conn, meshtype, meshSeg, structuralSpanLocNorm, structuralNodeNumbers, structuralElNumbers)
@@ -252,8 +252,7 @@ function calculateElementOrientation(mesh)
     Theta_d=zeros(numEl)
     twist_d=zeros(numEl)
     Offset=zeros(3,numEl)    #offset is the hub frame coordinate of node 1 of the element
-    elNum=zeros(numEl) #initialize element number array
-
+    elNum=zeros(numEl,2) #initialize element number array
 
     #calculate "mesh centroid"
     meshCentroid = [Statistics.mean(mesh.x) Statistics.mean(mesh.y) Statistics.mean(mesh.z)] #calculate a geometric centroid using all nodal coordinates
