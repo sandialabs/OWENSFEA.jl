@@ -254,7 +254,7 @@ function  structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega,OmegaDo
 	x = mesh.x
 	y = mesh.y
 	z = mesh.z
-	conn = Int.(mesh.conn)
+	conn = mesh.conn
 	numNodes = length(x)
 	elementOrder = feamodel.elementOrder
 	BC = feamodel.BC

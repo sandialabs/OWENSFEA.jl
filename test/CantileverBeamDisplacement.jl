@@ -213,7 +213,7 @@ for (iload,load) in enumerate(P)
     nodalTerms = OWENSFEA.applyConcentratedTerms(mesh.numNodes, 6;data = nodalinputdata)
 
     feamodel = OWENSFEA.FEAModel(;analysisType = "TNB",
-    outFilename = "none",
+    dataOutputFilename = "none",
     joint,
     pBC = pBC,
     nodalTerms = nodalTerms,

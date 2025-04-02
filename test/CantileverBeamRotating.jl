@@ -193,7 +193,7 @@ function runme(islinear)
     for (ii,rpm) in enumerate(RPM)
 
         feamodel = OWENSFEA.FEAModel(;analysisType = "TNB",
-        outFilename = "none",
+        dataOutputFilename = "none",
         joint,
         pBC = pBC,
         numNodes = mesh.numNodes,

@@ -2,6 +2,7 @@
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://sandialabs.github.io/OWENSFEA.jl)
 ![](https://github.com/sandialabs/OWENSFEA.jl/workflows/CI/badge.svg)
+[![codecov.io](https://codecov.io/github/sandialabs/OWENSFEA.jl/coverage.svg?branch=master)](https://codecov.io/github/sandialabs/OWENSFEA.jl?branch=master)
 
 
 OWENSFEA is a structural dynamics analysis tool intended to address the challenges associated with modeling Vertical Axis Wind Turbines (VAWTs), namely spin softening, centrifugal stiffening, and coriolis forces, in a numerically energy preserving finite element method.  This finite element method is based on the Timoshenko beam element and can be run both for modal and unsteady analyses. Please see the following reference for more details.
