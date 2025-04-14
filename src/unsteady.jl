@@ -21,9 +21,11 @@ function initialElementCalculations(feamodel,el,mesh)
     countedNodes = []
 
     elStorage = Array{ElStorage, 1}(undef, mesh.numEl)
-    elx = zeros(numNodesPerEl)
-    ely = zeros(numNodesPerEl)
-    elz = zeros(numNodesPerEl)
+    Tx = eltype(mesh.x)
+    @assert eltype(mesh.x) === eltype(mesh.y) === eltype(mesh.z)
+    elx = zeros(Tx, numNodesPerEl)
+    ely = zeros(Tx, numNodesPerEl)
+    elz = zeros(Tx, numNodesPerEl)
 
     elementOrder = feamodel.elementOrder #assign for element i
     modalFlag = true

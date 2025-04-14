@@ -59,7 +59,13 @@ function calculateTimoshenkoElementInitialRun(elementOrder,modalFlag,xloc,sectio
     #Initialize element sub matrices and sub vectors
     numNodesPerEl = length(x)
 
-    K11 = zeros(numNodesPerEl,2)
+    # Compute a common numeric type for the stiffness matrices
+    NT = promote_type(
+        eltype(xloc),
+        eltype(sectionProps.EA),
+    )
+
+    K11 = zeros(NT, numNodesPerEl, 2)
     K12 = zero(K11)
     K13 = zero(K11)
     K14 = zero(K11)
@@ -147,8 +153,8 @@ function calculateTimoshenkoElementInitialRun(elementOrder,modalFlag,xloc,sectio
     C46_2 = zero(K11)
 
     elementMass = 0.0
-    elementItens = zeros(3,3)
-    elxm = zeros(3)
+    elementItens = zeros(NT, 3, 3)
+    elxm = zeros(NT, 3)
 
     #Sort displacement vector
     #Written for 2 node element with 6 dof per node
