@@ -277,7 +277,7 @@ function createTda(jointType,slaveNodeNum,masterNodeNum,psi,theta,joint)
         ly = joint[6]
         lz = joint[7]
 
-        Rda5 = -1.0*LinearAlgebra.I(6)
+        Rda5 = Matrix(-1.0*LinearAlgebra.I(6))
         Rda5[1:3,4:6] = [0 -lz ly;lz 0 -lx;-ly lx 0]
 
         Tda,dDOF,aDOF = getNodeMaps(Rdd5,Rda5,masterNodeNum,slaveNodeNum,slaveDof5,activeDof5,slaveActiveDof5);
