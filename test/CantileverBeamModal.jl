@@ -1,5 +1,6 @@
 using GXBeam, LinearAlgebra
 import OWENSFEA
+import MAT
 # include("../src/OWENSFEA.jl")
 include("./testdeps.jl")
 import Statistics
@@ -189,7 +190,14 @@ platformTurbineConnectionNodeNumber = 1,
 pBC = pBC,
 numNodes = mesh.numNodes)
 
-freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=OWENSFEA.modal(feamodel,mesh,el;returnDynMatrices=true)
+dyn_matrix_filename = tempname() * ".mat"
+freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=OWENSFEA.modal(
+    feamodel,
+    mesh,
+    el;
+    returnDynMatrices = true,
+    dynMatrixFilename = dyn_matrix_filename,
+)
 
 # OWENS Frequencies that correspond to the GX beam are every other, and then 1,3,5 of the every other sets corresponds to the analytical
 
@@ -213,3 +221,10 @@ for ifreq = 1:3
     # println(freqOWENS2D[ifreq])
     # println("error = $((freqOWENS2D[ifreq]-freqAnalytical[ifreq])/freqAnalytical[ifreq]*100)")
 end
+
+@test isfile(dyn_matrix_filename)
+dyn_matrices = MAT.matread(dyn_matrix_filename)
+@test dyn_matrices["Kg_all"] isa Matrix{Float64}
+@test size(dyn_matrices["Kg_all"]) == (mesh.numNodes * 6, mesh.numNodes * 6)
+@test size(dyn_matrices["KgTotalM"], 1) < size(dyn_matrices["Kg_all"], 1)
+rm(dyn_matrix_filename; force = true)
