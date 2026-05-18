@@ -1,7 +1,38 @@
 # OWENSFEA
 
-OWENSFEA is a structural dynamics analysis tool intended to address the challenges associated with modeling Vertical Axis Wind Turbines (VAWTs), namely spin softening, centrifugal stiffening, and coriolis forces, in a numerically energy preserving finite element method.  This finite element method is based on the Timoshenko beam element and can be run both for modal and unsteady analyses. Please see the following reference for more details.
+OWENSFEA is the structural dynamics package in the OWENS toolkit. It provides
+beam finite-element models used for turbine blades, struts, towers, and coupled
+aeroelastic simulations. The code supports modal, nonlinear steady, transient,
+and reduced-order structural workflows.
 
-Please make all feature changes and bug fixes as branches and then create pull requests against the dev branch.  The dev branch will be periodically pulled into master for version changes.
+```@raw html
+<p align="center">
+    <img src="./assets/fea_workflow.svg" alt="OWENSFEA workflow diagram" style="width:72%">
+</p>
+```
 
- Owens,B.C.,“Theoretical Developments and Practical Aspects of Dynamic Systems in Wind Energy Applications,”Ph.D. thesis, Texas A & M University, 2013. URL http://hdl.handle.net/1969.1/151813.
+The package is based on a Timoshenko beam formulation and the dynamic-system
+work described in:
+
+Owens, B. C., "Theoretical Developments and Practical Aspects of Dynamic Systems
+in Wind Energy Applications," Ph.D. thesis, Texas A & M University, 2013.
+
+## What This Package Owns
+
+- structural mesh, element, section-property, and FEA model types;
+- joint constraints, prescribed boundary conditions, and concentrated nodal
+  terms;
+- element stiffness, mass, damping, gravity, spin, and follower-load
+  calculations;
+- linear modal analysis, nonlinear steady solve, transient dynamics, and ROM
+  utilities;
+- structural reactions, strains, and post-solve helper maps used by OWENS.
+
+## Where To Start
+
+- Use the quickstart for a minimal model and test-backed workflow references.
+- Use model assembly before changing meshes, joints, boundary conditions, or
+  concentrated terms.
+- Use the frames and units page before comparing against GXBeam, OpenFAST, or
+  experimental data.
+- Use the validation page before changing solver tolerances or reference data.
