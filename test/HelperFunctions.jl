@@ -49,6 +49,60 @@ end
     @test sum(p_N_x) == 0.0
 end
 
+@testset "Element mass center offsets" begin
+    rhoA = 10.0
+    rhoIyy = 2.0
+    rhoIzz = 3.0
+    rhoIyz = 0.4
+    rhoJ = 5.0
+    ycm = 0.2
+    zcm = -0.3
+    x = 1.0
+    y = 0.5
+    z = 0.75
+    integration_factor = 2.0
+
+    M, Itens, xm = OWENSFEA.calculateElementMass(
+        rhoA,
+        rhoIyy,
+        rhoIzz,
+        rhoIyz,
+        rhoJ,
+        ycm,
+        zcm,
+        x,
+        y,
+        z,
+        integration_factor,
+        1.5,
+        zeros(3, 3),
+        zeros(3),
+    )
+
+    offset_y = y + ycm
+    offset_z = z + zcm
+    expected_mass = 21.5
+    expected_inertia =
+        rhoA * integration_factor *
+        [
+            offset_y^2+offset_z^2 -x*offset_y -x*offset_z
+            -x*offset_y x^2+offset_z^2 -offset_y*offset_z
+            -x*offset_z -offset_y*offset_z x^2+offset_y^2
+        ] +
+        integration_factor *
+        [
+            rhoJ 0.0 0.0
+            0.0 rhoIyy rhoIyz
+            0.0 rhoIyz rhoIzz
+        ]
+
+    @test M == expected_mass
+    @test Itens == expected_inertia
+    @test xm == rhoA * integration_factor * [x, offset_y, offset_z]
+    @test xm[2] == 14.0
+    @test xm[3] == 9.0
+end
+
 @testset "Reduced DOF and boundary-condition maps" begin
     is_constrained = [0, 1, 0, 0, 1, 0]
     pBC = [1.0 2.0 10.0;
