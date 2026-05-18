@@ -1,5 +1,9 @@
 using Test
 
+@testset "Helper Functions" begin
+    include("HelperFunctions.jl")
+end
+
 @testset "Cantilever Beam Modal" begin
     include("CantileverBeamModal.jl")
 end
