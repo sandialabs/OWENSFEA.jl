@@ -138,6 +138,108 @@ end
     @test GAz == 450.0
 end
 
+@testset "Nonlinear selective stiffness guardrails" begin
+    zeros2 = [0.0, 0.0]
+    section_props = OWENSFEA.SectionPropsArray(
+        zeros2,
+        zeros2,
+        fill(1.0, 2),
+        fill(2.0, 2),
+        fill(3.0, 2),
+        fill(4.0, 2),
+        fill(100.0, 2),
+        fill(0.1, 2),
+        fill(0.2, 2),
+        fill(0.3, 2),
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+    )
+
+    base_input = (
+        elementOrder = 1,
+        x = [0.0, 2.0],
+        xloc = [0.0, 2.0],
+        disp = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.02, 0.10, -0.04, 0.0, 0.0, 0.0],
+        sectionProps = section_props,
+        sweepAngle = 15.0,
+        coneAngle = -5.0,
+        rollAngle = 20.0,
+        useDisp = true,
+        preStress = false,
+        iterationType = "DI",
+        analysisType = "M",
+    )
+    stiffness = OWENSFEA.calculateTimoshenkoElementNLSS(base_input)
+
+    expected_entries = Dict(
+        (1, 1) => -0.7182552312882436,
+        (2, 1) => 2.072437741694245,
+        (3, 1) => -1.065664337369036,
+        (7, 1) => 0.7182552312882436,
+        (8, 1) => -2.072437741694245,
+        (9, 1) => 1.065664337369036,
+        (1, 2) => 0.9340835481944969,
+        (2, 2) => 0.9131441192104118,
+        (3, 2) => -0.2082394337349706,
+        (7, 2) => -0.9340835481944969,
+        (8, 2) => -0.9131441192104118,
+        (9, 2) => 0.2082394337349706,
+        (1, 3) => -0.5627503082325922,
+        (2, 3) => 0.02962232494775191,
+        (3, 3) => -0.1306748476499941,
+        (7, 3) => 0.5627503082325922,
+        (8, 3) => -0.02962232494775191,
+        (9, 3) => 0.1306748476499941,
+        (1, 7) => 0.7182552312882436,
+        (2, 7) => -2.072437741694245,
+        (3, 7) => 1.065664337369036,
+        (7, 7) => -0.7182552312882436,
+        (8, 7) => 2.072437741694245,
+        (9, 7) => -1.065664337369036,
+        (1, 8) => -0.9340835481944969,
+        (2, 8) => -0.9131441192104118,
+        (3, 8) => 0.2082394337349706,
+        (7, 8) => 0.9340835481944969,
+        (8, 8) => 0.9131441192104118,
+        (9, 8) => -0.2082394337349706,
+        (1, 9) => 0.5627503082325922,
+        (2, 9) => -0.02962232494775191,
+        (3, 9) => 0.1306748476499941,
+        (7, 9) => -0.5627503082325922,
+        (8, 9) => 0.02962232494775191,
+        (9, 9) => -0.1306748476499941,
+    )
+    @test size(stiffness) == (12, 12)
+    @test count(!iszero, stiffness) == length(expected_entries)
+    for (index, expected) in expected_entries
+        @test stiffness[index...] ≈ expected atol=1e-14
+    end
+    for index in CartesianIndices(stiffness)
+        Tuple(index) in keys(expected_entries) && continue
+        @test stiffness[index] == 0.0
+    end
+
+    nr_input = merge(base_input, (iterationType = "NR",))
+    @test thrown_message(() -> OWENSFEA.calculateTimoshenkoElementNLSS(nr_input)) ==
+          "ArgumentError: calculateTimoshenkoElementNLSS does not support Newton-Raphson iteration"
+
+    transient_input = merge(base_input, (analysisType = "TNB",))
+    @test thrown_message(() -> OWENSFEA.calculateTimoshenkoElementNLSS(transient_input)) ==
+          "ArgumentError: calculateTimoshenkoElementNLSS currently supports analysisType = \"M\" only"
+end
+
 @testset "Element mass center offsets" begin
     rhoA = 10.0
     rhoIyy = 2.0

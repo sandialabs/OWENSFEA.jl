@@ -1364,6 +1364,10 @@ Performs selective nonlinear element calculations. Only stiffness matrix contrib
 *  `eloutput`:    object containing element data
 """
 function calculateTimoshenkoElementNLSS(input)
+    input.analysisType == "M" ||
+        throw(ArgumentError("calculateTimoshenkoElementNLSS currently supports analysisType = \"M\" only"))
+    input.iterationType == "NR" &&
+        throw(ArgumentError("calculateTimoshenkoElementNLSS does not support Newton-Raphson iteration"))
 
     ###-------- assign input block ----------------
     elementOrder   = input.elementOrder
@@ -1380,9 +1384,7 @@ function calculateTimoshenkoElementNLSS(input)
     iterationType  = input.iterationType
 
     ###--------------------------------------------
-    if input.analysisType == "M" #TODO: why are we doing this if the analysis type is hard coded above to be M and required below?
-        disp_iter=disp
-    end
+    disp_iter = disp
 
     numGP = 1 #used reduced integration for nonlinear terms
 
@@ -1475,9 +1477,6 @@ function calculateTimoshenkoElementNLSS(input)
     lambdaTran = SparseArrays.sparse(lambdaTran)
     Ke = lambdaTran*Ke*lambda
 
-    if iterationType == "NR"
-        error("calcTimoElNLSS needs some mods to be used with newton raphson")
-    end
     #----- assign output block ----------------
     Ke = collect(Ke)
 

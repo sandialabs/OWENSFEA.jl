@@ -8,6 +8,12 @@ OWENSFEA has three useful test layers:
 | Static/modal beams | `test/CantileverBeam*.jl` | beam displacement, modal frequencies, rotations, and nonlinear/static behavior. |
 | Transient comparison | `test/UnsteadyBeam.jl` | time response compared with GXBeam for the maintained cantilever case. |
 
+The helper layer also pins an off-axis nonlinear selective-stiffness matrix from
+`calculateTimoshenkoElementNLSS`. That case is a regression guard for future
+strain-stiffening and nonlinear ROM work: it fixes the current direct-iteration
+matrix entries and requires unsupported Newton-Raphson calls to fail fast with a
+clear error instead of reaching undefined tangent-matrix state.
+
 ## Acceptance Rules
 
 - Pin exact matrix entries for utility functions.
