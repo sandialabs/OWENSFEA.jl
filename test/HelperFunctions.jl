@@ -49,6 +49,39 @@ end
     @test sum(p_N_x) == 0.0
 end
 
+@testset "Element accumulation and assembly kernels" begin
+    K = zeros(2, 3)
+    OWENSFEA.calculateElement1!(2.0, 0.25, [1.0, 2.0], [3.0, 5.0, 7.0], K)
+    @test K == [1.5 2.5 3.5; 3.0 5.0 7.0]
+
+    F = zeros(2)
+    OWENSFEA.calculateVec1!(4.0, 0.5, [2.0, 3.0], F)
+    @test F == [4.0, 6.0]
+
+    Ke = reshape(collect(1.0:16.0), 4, 4)
+    Fe = [10.0, 20.0, 30.0, 40.0]
+    conn = [2, 4]
+    dofs = [3, 4, 7, 8]
+
+    Kg = zeros(8, 8)
+    Fg = zeros(8)
+    OWENSFEA.assembly!(Ke, Fe, conn, 2, 2, Kg, Fg)
+    @test Fg[dofs] == Fe
+    @test Kg[dofs, dofs] == Ke
+    @test sum(Fg) == 100.0
+    @test sum(Kg) == 136.0
+
+    Kg_returned, Fg_returned = OWENSFEA.assembly(Ke, Fe, conn, 2, 2, zeros(8, 8), zeros(8))
+    @test Fg_returned == Fg
+    @test Kg_returned == Kg
+
+    @test_throws DimensionMismatch OWENSFEA.calculateElement1!(2.0, 0.25, [1.0, 2.0], [3.0, 5.0], zeros(1, 2))
+    @test_throws DimensionMismatch OWENSFEA.calculateVec1!(4.0, 0.5, [2.0, 3.0], zeros(1))
+    @test_throws DimensionMismatch OWENSFEA.assembly!(zeros(3, 4), Fe, conn, 2, 2, zeros(8, 8), zeros(8))
+    @test_throws DimensionMismatch OWENSFEA.assembly!(Ke, Fe, [0, 4], 2, 2, zeros(8, 8), zeros(8))
+    @test_throws DimensionMismatch OWENSFEA.assembly!(Ke, Fe, conn, 2, 2, zeros(7, 7), zeros(7))
+end
+
 @testset "Mesh and orientation constructors normalize input types" begin
     mesh = OWENSFEA.Mesh(
         1:2,
