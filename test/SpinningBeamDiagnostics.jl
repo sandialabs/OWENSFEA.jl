@@ -136,3 +136,24 @@ end
     @test isapprox(reaction[4], 0.0; atol=1e-10*abs(expected_spin_axis_torque))
     @test isapprox(reaction[5], 0.0; atol=1e-10*abs(expected_spin_axis_torque))
 end
+
+@testset "Static global spin axis limitation" begin
+    mesh, el, _, _ = _spinning_beam_fixture()
+    feamodel = _spinning_beam_model(mesh)
+    el_storage = OWENSFEA.initialElementCalculations(feamodel, el, mesh)
+    displ0 = zeros(mesh.numNodes*6)
+
+    # staticAnalysis only exposes scalar Omega/OmegaDot, which is added to the
+    # hub z-axis in the Timoshenko element.  A future HAWT/global-x diagnostic
+    # needs a public steady API path for the existing omegaVec/rbData plumbing.
+    @test_throws MethodError OWENSFEA.staticAnalysis(
+        feamodel,
+        mesh,
+        el,
+        displ0,
+        0.0,
+        0.0,
+        el_storage;
+        rbData=[0.0, 0.0, 0.0, 2*pi, 0.0, 0.0, 0.0, 0.0, 0.0],
+    )
+end
