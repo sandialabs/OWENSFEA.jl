@@ -20,6 +20,10 @@ end
     include("CantileverBeamRotatingModal.jl")
 end
 
+@testset "Straight spinning beam reaction diagnostics" begin
+    include("SpinningBeamDiagnostics.jl")
+end
+
 @testset "Cantilever Beam Unsteady Response to Unsteady Tip Load" begin
     include("UnsteadyBeam.jl")
 end
