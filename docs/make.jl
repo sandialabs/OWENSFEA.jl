@@ -14,8 +14,15 @@ makedocs(;
     sitename = "OWENSFEA.jl",
     authors = "Kevin R. Moore <kevmoor@sandia.gov>",
     remotes = nothing,
+    format = Documenter.HTML(
+        repolink = "https://github.com/sandialabs/OWENSFEA.jl",
+        edit_link = "master",
+    ),
 )
 
-deploydocs(
-    repo = "github.com/sandialabs/OWENSFEA.jl.git",
-)
+if get(ENV, "CI", "false") == "true"
+    deploydocs(
+        repo = "github.com/sandialabs/OWENSFEA.jl.git",
+        devbranch = "master",
+    )
+end
