@@ -14,6 +14,12 @@ strain-stiffening and nonlinear ROM work: it fixes the current direct-iteration
 matrix entries and requires unsupported Newton-Raphson calls to fail fast with a
 clear error instead of reaching undefined tangent-matrix state.
 
+`test/SpinningBeamDiagnostics.jl` pins structural-only spin reactions before
+gyric or spin-softening equation changes. The cases include straight and
+eccentric beams under scalar z-axis spin acceleration. The eccentric case also
+documents the current root-moment gap: the x-force from the offset is present,
+while the reported spin-axis torque omits the corresponding `y^2` contribution.
+
 ## Acceptance Rules
 
 - Pin exact matrix entries for utility functions.

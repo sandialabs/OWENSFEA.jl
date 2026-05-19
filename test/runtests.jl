@@ -20,7 +20,7 @@ end
     include("CantileverBeamRotatingModal.jl")
 end
 
-@testset "Straight spinning beam reaction diagnostics" begin
+@testset "Spinning beam reaction diagnostics" begin
     include("SpinningBeamDiagnostics.jl")
 end
 

@@ -1,11 +1,11 @@
 using Test
 import OWENSFEA
 
-function _spinning_beam_fixture(; L=2.0, nelem=4)
+function _spinning_beam_fixture(; L=2.0, nelem=4, y_offset=0.0, stiffness_scale=1.0)
     b = 0.05
     h = 0.02
     A = b*h
-    E = 2.1e11
+    E = 2.1e11*stiffness_scale
     nu = 0.28
     G = E/(2*(1 + nu))
     rho = 7800.0
@@ -44,7 +44,7 @@ function _spinning_beam_fixture(; L=2.0, nelem=4)
         nelem,
         nelem + 1,
         x,
-        zeros(nelem + 1),
+        fill(y_offset, nelem + 1),
         zeros(nelem + 1),
         collect(1:nelem),
         conn,
@@ -105,6 +105,35 @@ function _root_reaction(mesh, el; Omega=0.0, OmegaDot=0.0)
         )
     end
     return success, reaction[1:6]
+end
+
+@testset "Eccentric spinning beam spin-acceleration reactions" begin
+    y_offset = 0.3
+    spin_accel_hz = 2.0
+    mesh, el, rhoA, L = _spinning_beam_fixture(; y_offset, stiffness_scale=1e4)
+    success, reaction = _root_reaction(mesh, el; OmegaDot=spin_accel_hz)
+
+    alpha = 2*pi*spin_accel_hz
+    expected_x_reaction = -rhoA*alpha*y_offset*L
+    expected_y_reaction = rhoA*alpha*L^2/2
+    expected_spanwise_spin_axis_torque = rhoA*alpha*L^3/3
+    expected_offset_spin_axis_torque = rhoA*alpha*y_offset^2*L
+
+    @test success
+    @test isapprox(reaction[1], expected_x_reaction; rtol=1e-5)
+    @test isapprox(reaction[2], expected_y_reaction; rtol=1e-5)
+    # The current root-reaction moment channel omits the eccentric y^2 term even
+    # though the corresponding x-force is present. Pin both sides so a future
+    # #15/#17 torque fix is an intentional test update.
+    @test isapprox(reaction[6], expected_spanwise_spin_axis_torque; rtol=1e-5)
+    @test isapprox(
+        expected_spanwise_spin_axis_torque + expected_offset_spin_axis_torque - reaction[6],
+        expected_offset_spin_axis_torque;
+        rtol=1e-5,
+    )
+    @test isapprox(reaction[3], 0.0; atol=1e-10*abs(expected_y_reaction))
+    @test isapprox(reaction[4], 0.0; atol=1e-10*abs(expected_spanwise_spin_axis_torque))
+    @test isapprox(reaction[5], 0.0; atol=1e-10*abs(expected_spanwise_spin_axis_torque))
 end
 
 @testset "Straight spinning beam reaction diagnostics" begin

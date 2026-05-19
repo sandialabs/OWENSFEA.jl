@@ -19,7 +19,7 @@ Use SI units unless a file format explicitly states otherwise:
 | force | N |
 | moment | N m |
 | mass per unit length | kg/m |
-| rotational speed | rad/s |
+| internal angular speed | rad/s |
 | bending stiffness | N m^2 |
 | torsional stiffness | N m^2 |
 | axial stiffness | N |
@@ -42,3 +42,10 @@ because the expected reaction sign and magnitude differ.
 Spin-softening, centrifugal, and Coriolis effects depend on the selected analysis
 path. A structural-only test should state whether gravity and rotor speed are
 enabled.
+
+The current public steady `staticAnalysis` scalar `Omega` and `OmegaDot` inputs
+are z-axis spin terms supplied in revolutions/s and revolutions/s^2. The
+Timoshenko element path converts them internally to rad/s and rad/s^2 before
+adding them to the element rigid-body angular state. Global x-axis spin for HAWT
+rotor-only motion still needs an explicit public frame/state owner before it can
+replace the scalar z-axis path.
