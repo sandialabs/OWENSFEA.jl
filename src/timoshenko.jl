@@ -1,3 +1,34 @@
+const DEFAULT_TIMOSHENKO_POISSON_RATIO = 0.3
+const DEFAULT_TIMOSHENKO_SHEAR_CORRECTION = 5 / 6
+
+"""
+    defaultTransverseShearStiffness(EA; poisson_ratio=0.3, shear_correction=5/6)
+
+Compute the default Timoshenko transverse shear stiffness from axial stiffness,
+`GA = shear_correction * EA / (2 * (1 + poisson_ratio))`.
+"""
+function defaultTransverseShearStiffness(EA; poisson_ratio=DEFAULT_TIMOSHENKO_POISSON_RATIO, shear_correction=DEFAULT_TIMOSHENKO_SHEAR_CORRECTION)
+    poisson_ratio > -1 || throw(ArgumentError("poisson_ratio must be greater than -1"))
+    shear_correction > 0 || throw(ArgumentError("shear_correction must be positive"))
+    return shear_correction * EA / (2 * (1 + poisson_ratio))
+end
+
+"""
+    transverseShearStiffness(sectionProps, N) -> GAy, GAz
+
+Return local-y and local-z transverse shear stiffnesses at a quadrature point.
+Explicit `sectionProps.GAy` and `sectionProps.GAz` values take precedence;
+otherwise both directions use the documented isotropic default computed from
+`EA`, Poisson's ratio 0.3, and a 5/6 shear correction.
+"""
+function transverseShearStiffness(sectionProps, N)
+    EA = interpolateVal(sectionProps.EA,N)
+    default_GA = defaultTransverseShearStiffness(EA)
+    GAy = isnothing(sectionProps.GAy) ? default_GA : interpolateVal(sectionProps.GAy,N)
+    GAz = isnothing(sectionProps.GAz) ? default_GA : interpolateVal(sectionProps.GAz,N)
+    return GAy, GAz
+end
+
 """
     calculateTimoshenkoElementInitialRun(elementOrder,modalFlag,xloc,sectionProps,sweepAngle,coneAngle,rollAngle,aeroSweepAngle,x,y,z,concMassFlag,concMass,Omega)
 
@@ -322,17 +353,16 @@ function calculateTimoshenkoElementInitialRun(elementOrder,modalFlag,xloc,sectio
         integrationFactor = Jac * weight[i]
 
         #..... interpolate for value at quad point .....
-        EA   = interpolateVal(sectionProps.EA,N) #struct stiffness terms
-        GA = EA/2.6*5/6
+        GAy, GAz = transverseShearStiffness(sectionProps,N)
         #.... end interpolate value at quad points ........
 
         #Calculate strutural stiffness sub matrices
-        calculateElement1!(GA,integrationFactor,p_N2_x,p_N2_x,K22)
-        calculateElement1!(-GA,integrationFactor,p_N2_x,N6,K26)
-        calculateElement1!(GA,integrationFactor,p_N3_x,p_N3_x,K33)
-        calculateElement1!(GA,integrationFactor,p_N3_x,N5,K35)
-        calculateElement1!(GA,integrationFactor,N5,N5,K55)
-        calculateElement1!(GA,integrationFactor,N6,N6,K66)
+        calculateElement1!(GAy,integrationFactor,p_N2_x,p_N2_x,K22)
+        calculateElement1!(-GAy,integrationFactor,p_N2_x,N6,K26)
+        calculateElement1!(GAz,integrationFactor,p_N3_x,p_N3_x,K33)
+        calculateElement1!(GAz,integrationFactor,p_N3_x,N5,K35)
+        calculateElement1!(GAz,integrationFactor,N5,N5,K55)
+        calculateElement1!(GAy,integrationFactor,N6,N6,K66)
 
     end
 

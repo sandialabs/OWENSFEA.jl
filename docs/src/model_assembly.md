@@ -13,7 +13,8 @@ stable because those choices define local beam frames and reaction signs.
 
 `SectionPropsArray` carries spanwise structural properties:
 
-- `EA`, `GJ`, `EIyy`, `EIzz`, and optional coupling terms;
+- `EA`, `GJ`, `EIyy`, `EIzz`, optional transverse shear stiffnesses
+  `GAy`/`GAz`, and optional coupling terms;
 - mass per unit length and inertias;
 - center-of-mass and aerodynamic-center offsets;
 - twist and aerodynamic/structural reference offsets.
@@ -21,6 +22,11 @@ stable because those choices define local beam frames and reaction signs.
 When section data comes from `OWENSPreComp`, document whether offsets are
 relative to the leading edge, reference axis, shear center, tension center, or
 center of mass before mapping into FEA inputs.
+
+When `GAy` and `GAz` are omitted, the Timoshenko element computes both
+transverse shear stiffnesses from `EA`, Poisson's ratio 0.3, and a 5/6 shear
+correction. Composite or externally generated section-property workflows should
+pass explicit `GAy` and `GAz` values when available.
 
 ## Boundary Conditions
 

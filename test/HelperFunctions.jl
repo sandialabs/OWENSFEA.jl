@@ -49,6 +49,62 @@ end
     @test sum(p_N_x) == 0.0
 end
 
+@testset "Mesh and orientation constructors normalize input types" begin
+    mesh = OWENSFEA.Mesh(
+        1:2,
+        1.0,
+        2.0,
+        0:1,
+        [0, 0],
+        [0, 0],
+        1:1,
+        [1.0 2.0],
+        [0.0],
+        [2.0],
+        [0 1],
+        [1.0 2.0],
+        [1.0 1.0],
+    )
+
+    @test mesh.nodeNum == [1, 2]
+    @test mesh.nodeNum isa Vector{Int}
+    @test mesh.numEl == 1
+    @test mesh.numNodes == 2
+    @test mesh.x == [0.0, 1.0]
+    @test mesh.x isa Vector{Float64}
+    @test mesh.conn == [1 2]
+    @test mesh.conn isa Matrix{Int}
+    @test mesh.structuralSpanLocNorm == [0.0 1.0]
+    @test mesh.structuralNodeNumbers == [1 2]
+    @test mesh.structuralElNumbers == [1 1]
+
+    ort = OWENSFEA.Ort((0, 10), 0:1, [0, 0], [1, 1], [1 2], [1 2 3; 4 5 6])
+    @test ort.Psi_d == [0.0, 10.0]
+    @test ort.Psi_d isa Vector{Float64}
+    @test ort.Theta_d == [0.0, 1.0]
+    @test ort.elNum == [1.0 2.0]
+    @test ort.Offset == [1.0 2.0 3.0; 4.0 5.0 6.0]
+end
+
+@testset "Timoshenko transverse shear stiffness" begin
+    @test OWENSFEA.defaultTransverseShearStiffness(260.0) ≈ 260.0 / 2.6 * 5 / 6 atol=1e-12
+    @test OWENSFEA.defaultTransverseShearStiffness(300.0; poisson_ratio=0.25, shear_correction=0.8) == 96.0
+    @test_throws ArgumentError OWENSFEA.defaultTransverseShearStiffness(1.0; poisson_ratio=-1.0)
+    @test_throws ArgumentError OWENSFEA.defaultTransverseShearStiffness(1.0; shear_correction=0.0)
+
+    N = [0.25, 0.75]
+    default_props = (EA = [260.0, 520.0], GAy = nothing, GAz = nothing)
+    GAy, GAz = OWENSFEA.transverseShearStiffness(default_props, N)
+    expected_default = OWENSFEA.defaultTransverseShearStiffness(455.0)
+    @test GAy == expected_default
+    @test GAz == expected_default
+
+    explicit_props = (EA = [260.0, 520.0], GAy = [100.0, 200.0], GAz = [300.0, 500.0])
+    GAy, GAz = OWENSFEA.transverseShearStiffness(explicit_props, N)
+    @test GAy == 175.0
+    @test GAz == 450.0
+end
+
 @testset "Element mass center offsets" begin
     rhoA = 10.0
     rhoIyy = 2.0
