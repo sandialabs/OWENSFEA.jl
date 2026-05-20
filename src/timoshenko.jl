@@ -13,19 +13,34 @@ function defaultTransverseShearStiffness(EA; poisson_ratio=DEFAULT_TIMOSHENKO_PO
     return shear_correction * EA / (2 * (1 + poisson_ratio))
 end
 
+function optionalInterpolatedProperty(sectionProps, field::Symbol, N, default)
+    hasproperty(sectionProps, field) || return default
+    value = getproperty(sectionProps, field)
+    return isnothing(value) ? default : interpolateVal(value, N)
+end
+
 """
     transverseShearStiffness(sectionProps, N) -> GAy, GAz
 
 Return local-y and local-z transverse shear stiffnesses at a quadrature point.
 Explicit `sectionProps.GAy` and `sectionProps.GAz` values take precedence;
 otherwise both directions use the documented isotropic default computed from
-`EA`, Poisson's ratio 0.3, and a 5/6 shear correction.
+`EA`, `sectionProps.poisson_ratio` or Poisson's ratio 0.3, and
+`sectionProps.shear_correction` or a 5/6 shear correction.
 """
 function transverseShearStiffness(sectionProps, N)
     EA = interpolateVal(sectionProps.EA,N)
-    default_GA = defaultTransverseShearStiffness(EA)
-    GAy = isnothing(sectionProps.GAy) ? default_GA : interpolateVal(sectionProps.GAy,N)
-    GAz = isnothing(sectionProps.GAz) ? default_GA : interpolateVal(sectionProps.GAz,N)
+    GAy_data = sectionProps.GAy
+    GAz_data = sectionProps.GAz
+    if isnothing(GAy_data) || isnothing(GAz_data)
+        poisson_ratio = optionalInterpolatedProperty(sectionProps, :poisson_ratio, N, DEFAULT_TIMOSHENKO_POISSON_RATIO)
+        shear_correction = optionalInterpolatedProperty(sectionProps, :shear_correction, N, DEFAULT_TIMOSHENKO_SHEAR_CORRECTION)
+        default_GA = defaultTransverseShearStiffness(EA; poisson_ratio, shear_correction)
+    else
+        default_GA = nothing
+    end
+    GAy = isnothing(GAy_data) ? default_GA : interpolateVal(GAy_data,N)
+    GAz = isnothing(GAz_data) ? default_GA : interpolateVal(GAz_data,N)
     return GAy, GAz
 end
 

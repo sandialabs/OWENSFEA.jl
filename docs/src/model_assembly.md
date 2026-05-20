@@ -25,8 +25,11 @@ center of mass before mapping into FEA inputs.
 
 When `GAy` and `GAz` are omitted, the Timoshenko element computes both
 transverse shear stiffnesses from `EA`, Poisson's ratio 0.3, and a 5/6 shear
-correction. Composite or externally generated section-property workflows should
-pass explicit `GAy` and `GAz` values when available.
+correction unless `poisson_ratio` or `shear_correction` arrays are supplied on
+the section properties. Composite or externally generated section-property
+workflows should pass explicit `GAy` and `GAz` values when available; otherwise
+they should pass the material Poisson ratio and shear-correction factor used to
+derive the transverse shear stiffnesses.
 
 ## Boundary Conditions
 

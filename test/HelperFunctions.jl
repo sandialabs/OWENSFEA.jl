@@ -132,10 +132,83 @@ end
     @test GAy == expected_default
     @test GAz == expected_default
 
+    material_props = (
+        EA = [260.0, 520.0],
+        GAy = nothing,
+        GAz = nothing,
+        poisson_ratio = [0.2, 0.4],
+        shear_correction = [0.7, 0.9],
+    )
+    GAy, GAz = OWENSFEA.transverseShearStiffness(material_props, N)
+    expected_material = OWENSFEA.defaultTransverseShearStiffness(455.0; poisson_ratio = 0.35, shear_correction = 0.85)
+    @test GAy ≈ expected_material atol=5e-14 rtol=0.0
+    @test GAz ≈ expected_material atol=5e-14 rtol=0.0
+
+    zeros2 = [0.0, 0.0]
+    section_props = OWENSFEA.SectionPropsArray(
+        zeros2,
+        zeros2,
+        fill(1.0, 2),
+        fill(2.0, 2),
+        fill(3.0, 2),
+        fill(4.0, 2),
+        [260.0, 520.0],
+        fill(0.1, 2),
+        fill(0.2, 2),
+        fill(0.3, 2),
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        nothing,
+        nothing,
+        zeros2,
+        zeros2,
+        nothing,
+        nothing,
+        [0.2, 0.4],
+        [0.7, 0.9],
+    )
+    @test section_props.poisson_ratio == [0.2, 0.4]
+    @test section_props.shear_correction == [0.7, 0.9]
+    GAy, GAz = OWENSFEA.transverseShearStiffness(section_props, N)
+    @test GAy ≈ expected_material atol=5e-14 rtol=0.0
+    @test GAz ≈ expected_material atol=5e-14 rtol=0.0
+
     explicit_props = (EA = [260.0, 520.0], GAy = [100.0, 200.0], GAz = [300.0, 500.0])
     GAy, GAz = OWENSFEA.transverseShearStiffness(explicit_props, N)
     @test GAy == 175.0
     @test GAz == 450.0
+
+    explicit_overrides_material = (
+        EA = [260.0, 520.0],
+        GAy = [100.0, 200.0],
+        GAz = [300.0, 500.0],
+        poisson_ratio = [-1.0, -1.0],
+        shear_correction = [0.0, 0.0],
+    )
+    GAy, GAz = OWENSFEA.transverseShearStiffness(explicit_overrides_material, N)
+    @test GAy == 175.0
+    @test GAz == 450.0
+
+    @test_throws ArgumentError OWENSFEA.transverseShearStiffness(
+        (EA = [260.0, 520.0], GAy = nothing, GAz = nothing, poisson_ratio = [-1.0, -1.0], shear_correction = [5 / 6, 5 / 6]),
+        N,
+    )
+    @test_throws ArgumentError OWENSFEA.transverseShearStiffness(
+        (EA = [260.0, 520.0], GAy = nothing, GAz = nothing, poisson_ratio = [0.3, 0.3], shear_correction = [0.0, 0.0]),
+        N,
+    )
 end
 
 @testset "Nonlinear selective stiffness guardrails" begin
