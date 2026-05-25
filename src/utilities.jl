@@ -16,9 +16,15 @@ function calculateStructureMassProps(elStorage)
 
     numElements = length(elStorage) #get number of elements
 
-    structureMass = 0.0 #initialize structure mass and moment of inertia
-    structureMOI = zeros(3,3)
-    temp = zeros(3,1)
+    NT = promote_type(
+        typeof(elStorage[1].mel),
+        eltype(elStorage[1].moiel),
+        eltype(elStorage[1].xmel)
+    )
+
+    structureMass = zero(NT) #initialize structure mass and moment of inertia
+    structureMOI = zeros(NT, 3, 3)
+    temp = zeros(NT, 3, 1)
     for i=1:numElements #sum over elemetns contribution to mass and moment of inertia
         structureMass += elStorage[i].mel
         structureMOI .+= elStorage[i].moiel
@@ -68,7 +74,7 @@ function calculateLambda(theta1,theta2,theta3)
     fac2*ct1+st3*st1  fac2*st1-st3*ct1  ct3*ct2]
 
 
-    lambda = zeros(12,12)
+    lambda = zeros(eltype(dcm), 12, 12)
     lambda[1:3,1:3] = dcm
     lambda[4:6,4:6] = dcm
     lambda[7:9,7:9] = dcm
@@ -650,12 +656,13 @@ function calculateShapeFunctions(elementOrder,xi,x)
     end
 
     numNodesPerEl = length(N)
-    Jac=0.0
+    NT = promote_type(eltype(p_N_xi), eltype(x))
+    Jac = zero(NT)
     for i=1:numNodesPerEl
         Jac = Jac + p_N_xi[i]*x[i]
     end
 
-    p_N_x = zeros(numNodesPerEl)
+    p_N_x = zeros(NT, numNodesPerEl)
     for i=1:numNodesPerEl
         p_N_x[i] = p_N_xi[i]/Jac
     end
@@ -665,9 +672,10 @@ end
 """
 Internal, linear interpolation
 """
-function interpolateVal(valNode,N)
-    valGP = 0.0
-    for i=1:length(N)
+function interpolateVal(valNode::AbstractArray{T}, N::AbstractVector{S}) where {T, S}
+    TS = promote_type(T, S)
+    valGP = zero(TS)
+    for i in eachindex(N)
         valGP = valGP + N[i]*valNode[i]
     end
     return valGP

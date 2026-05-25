@@ -447,50 +447,60 @@ Struct with mesh definition
 
 """
 _int_vector(values) = Int.(collect(values))
-_float_vector(values) = Float64.(collect(values))
 _int_matrix(values) = Int.(values)
-_float_matrix(values) = Float64.(values)
+_number_vector(::Type{T}, values) where {T} = T.(collect(values))
+_number_matrix(::Type{T}, values) where {T} = T.(values)
+function _number_type(values...)
+    T = Float64
+    for vals in values
+        for value in vals
+            T = promote_type(T, typeof(value))
+        end
+    end
+    return T
+end
 
-mutable struct Mesh
+mutable struct Mesh{T}
     nodeNum::Vector{Int}
     numEl::Int
     numNodes::Int
-    x::Vector{Float64}
-    y::Vector{Float64}
-    z::Vector{Float64}
+    x::Vector{T}
+    y::Vector{T}
+    z::Vector{T}
     elNum::Vector{Int}
     conn::Matrix{Int}
     type::Vector{Int}
     meshSeg::Vector{Int}
-    structuralSpanLocNorm::Matrix{Float64}
+    structuralSpanLocNorm::Matrix{T}
     structuralNodeNumbers::Matrix{Int}
     structuralElNumbers::Matrix{Int}
     nonRotating::Int
     hubNodeNum::Int
     hubPos::Vector{Float64}
     hubAngle::Vector{Float64}
+end
 
-    function Mesh(nodeNum,numEl,numNodes,x,y,z,elNum,conn,type,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,nonRotating,hubNodeNum,hubPos,hubAngle)
-        new(
-            _int_vector(nodeNum),
-            Int(numEl),
-            Int(numNodes),
-            _float_vector(x),
-            _float_vector(y),
-            _float_vector(z),
-            _int_vector(elNum),
-            _int_matrix(conn),
-            _int_vector(type),
-            _int_vector(meshSeg),
-            _float_matrix(structuralSpanLocNorm),
-            _int_matrix(structuralNodeNumbers),
-            _int_matrix(structuralElNumbers),
-            Int(nonRotating),
-            Int(hubNodeNum),
-            _float_vector(hubPos),
-            _float_vector(hubAngle),
-        )
-    end
+function Mesh(nodeNum,numEl,numNodes,x,y,z,elNum,conn,type,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,nonRotating,hubNodeNum,hubPos,hubAngle)
+    T = _number_type(x, y, z, structuralSpanLocNorm)
+    return Mesh{T}(
+        _int_vector(nodeNum),
+        Int(numEl),
+        Int(numNodes),
+        _number_vector(T, x),
+        _number_vector(T, y),
+        _number_vector(T, z),
+        _int_vector(elNum),
+        _int_matrix(conn),
+        _int_vector(type),
+        _int_vector(meshSeg),
+        _number_matrix(T, structuralSpanLocNorm),
+        _int_matrix(structuralNodeNumbers),
+        _int_matrix(structuralElNumbers),
+        Int(nonRotating),
+        Int(hubNodeNum),
+        Float64.(collect(hubPos)),
+        Float64.(collect(hubAngle)),
+    )
 end
 
 Mesh(nodeNum,numEl,numNodes,x,y,z,elNum,conn,type,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers) = Mesh(nodeNum,numEl,numNodes,x,y,z,elNum,conn,type,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,0,1,zeros(3),zeros(3))
@@ -512,24 +522,25 @@ Struct with element orientation
 * `none`:
 
 """
-mutable struct Ort
-    Psi_d::Vector{Float64}
-    Theta_d::Vector{Float64}
+mutable struct Ort{T}
+    Psi_d::Vector{T}
+    Theta_d::Vector{T}
     Twist_d::Vector{Float64}
-    Length::Vector{Float64}
-    elNum::Matrix{Float64}
-    Offset::Matrix{Float64}
+    Length::Vector{T}
+    elNum::Matrix{Int}
+    Offset::Matrix{T}
+end
 
-    function Ort(Psi_d,Theta_d,Twist_d,Length,elNum,Offset)
-        new(
-            _float_vector(Psi_d),
-            _float_vector(Theta_d),
-            _float_vector(Twist_d),
-            _float_vector(Length),
-            _float_matrix(elNum),
-            _float_matrix(Offset),
-        )
-    end
+function Ort(Psi_d,Theta_d,Twist_d,Length,elNum,Offset)
+    T = _number_type(Psi_d, Theta_d, Length, Offset)
+    return Ort{T}(
+        _number_vector(T, Psi_d),
+        _number_vector(T, Theta_d),
+        Float64.(collect(Twist_d)),
+        _number_vector(T, Length),
+        _int_matrix(elNum),
+        _number_matrix(T, Offset),
+    )
 end
 
 """

@@ -116,7 +116,71 @@ end
     @test ort.Psi_d isa Vector{Float64}
     @test ort.Theta_d == [0.0, 1.0]
     @test ort.elNum == [1.0 2.0]
+    @test ort.elNum isa Matrix{Int}
     @test ort.Offset == [1.0 2.0 3.0; 4.0 5.0 6.0]
+
+    mesh_big = OWENSFEA.Mesh(
+        1:2,
+        1,
+        2,
+        BigFloat[0, 1],
+        BigFloat[0, 0],
+        BigFloat[0, 0],
+        [1],
+        [1 2],
+        [0],
+        [2],
+        reshape(BigFloat[0, 1], 1, 2),
+        [1 2],
+        [1 1],
+    )
+    @test mesh_big isa OWENSFEA.Mesh{BigFloat}
+    @test mesh_big.x isa Vector{BigFloat}
+    @test mesh_big.structuralSpanLocNorm isa Matrix{BigFloat}
+    @test mesh_big.conn isa Matrix{Int}
+
+    mesh_any = OWENSFEA.Mesh(
+        1:2,
+        1,
+        2,
+        Any[0.0, 1.0],
+        Any[0.0, 0.0],
+        Any[0.0, 0.0],
+        [1],
+        [1 2],
+        [0],
+        [2],
+        [0.0 1.0],
+        [1 2],
+        [1 1],
+    )
+    @test mesh_any isa OWENSFEA.Mesh{Float64}
+    @test mesh_any.x == [0.0, 1.0]
+
+    ort_big = OWENSFEA.Ort(
+        BigFloat[0, 10],
+        BigFloat[0, 1],
+        [0, 0],
+        BigFloat[1, 1],
+        [1 2],
+        [big"1" big"2" big"3"; big"4" big"5" big"6"],
+    )
+    @test ort_big isa OWENSFEA.Ort{BigFloat}
+    @test ort_big.Psi_d isa Vector{BigFloat}
+    @test ort_big.Length isa Vector{BigFloat}
+    @test ort_big.Offset isa Matrix{BigFloat}
+    @test ort_big.elNum isa Matrix{Int}
+
+    ort_any = OWENSFEA.Ort(
+        Any[0.0, 10.0],
+        Any[0.0, 1.0],
+        [0, 0],
+        Any[1.0, 1.0],
+        [1 2],
+        Any[1.0 2.0 3.0; 4.0 5.0 6.0],
+    )
+    @test ort_any isa OWENSFEA.Ort{Float64}
+    @test ort_any.Offset == [1.0 2.0 3.0; 4.0 5.0 6.0]
 end
 
 @testset "Timoshenko transverse shear stiffness" begin
