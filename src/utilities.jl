@@ -672,10 +672,10 @@ end
 """
 Internal, linear interpolation
 """
-function interpolateVal(valNode::AbstractVector{T}, N::AbstractVector{S}) where {T, S}
+function interpolateVal(valNode::AbstractArray{T}, N::AbstractVector{S}) where {T, S}
     TS = promote_type(T, S)
     valGP = zero(TS)
-    for i in eachindex(valNode, N)
+    for i in eachindex(N)
         valGP = valGP + N[i]*valNode[i]
     end
     return valGP
