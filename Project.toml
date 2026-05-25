@@ -1,7 +1,7 @@
 name = "OWENSFEA"
 uuid = "5906b1e7-6737-4278-91ec-d653c88addb4"
 authors = ["Kevin R. Moore <kevmoor@sandia.gov> and contributors"]
-version = "1.0.1"
+version = "1.0.2"
 
 [deps]
 ArnoldiMethod = "ec485272-7323-5ecc-a04f-4719b315124d"
