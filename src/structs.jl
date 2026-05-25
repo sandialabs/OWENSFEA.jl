@@ -450,6 +450,15 @@ _int_vector(values) = Int.(collect(values))
 _int_matrix(values) = Int.(values)
 _number_vector(::Type{T}, values) where {T} = T.(collect(values))
 _number_matrix(::Type{T}, values) where {T} = T.(values)
+function _number_type(values...)
+    T = Float64
+    for vals in values
+        for value in vals
+            T = promote_type(T, typeof(value))
+        end
+    end
+    return T
+end
 
 mutable struct Mesh{T}
     nodeNum::Vector{Int}
@@ -472,7 +481,7 @@ mutable struct Mesh{T}
 end
 
 function Mesh(nodeNum,numEl,numNodes,x,y,z,elNum,conn,type,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,nonRotating,hubNodeNum,hubPos,hubAngle)
-    T = promote_type(Float64, eltype(x), eltype(y), eltype(z), eltype(structuralSpanLocNorm))
+    T = _number_type(x, y, z, structuralSpanLocNorm)
     return Mesh{T}(
         _int_vector(nodeNum),
         Int(numEl),
@@ -523,7 +532,7 @@ mutable struct Ort{T}
 end
 
 function Ort(Psi_d,Theta_d,Twist_d,Length,elNum,Offset)
-    T = promote_type(Float64, eltype(Psi_d), eltype(Theta_d), eltype(Length), eltype(Offset))
+    T = _number_type(Psi_d, Theta_d, Length, Offset)
     return Ort{T}(
         _number_vector(T, Psi_d),
         _number_vector(T, Theta_d),
