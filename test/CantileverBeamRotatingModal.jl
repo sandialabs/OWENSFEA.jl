@@ -76,7 +76,9 @@ for ii = 1:length(mesh.z)-1
     local b = [0.0, 0.0]
     a0 = [0.0, 0.0]
     aeroCenterOffset = [0.0, 0.0]
-    sectionPropsArray[ii] = OWENSFEA.SectionPropsArray(ac,twist_d,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset)
+    GAy = [G*A, G*A]
+    GAz = [G*A, G*A]
+    sectionPropsArray[ii] = OWENSFEA.SectionPropsArray(ac,twist_d,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,nothing,nothing,zero(rhoA),zero(rhoA),GAy,GAz)
 end
 
 rotationalEffects = ones(mesh.numEl)
@@ -128,8 +130,9 @@ xm = vcat(xm_b1, xm_b2)
 # xm = [[xm1[i][3],xm1[i][2],xm1[i][1]] for i = 1:length(xm1)]
 Cab = vcat(Cab_b1, Cab_b2)
 
-# compliance matrix for each beam element
-compliance = fill(Diagonal([1/(E*A), 1/(E*A/2.6*5/6), 1/(E*A/2.6*5/6), 1/(G*J), 1/(E*Iyy), 1/(E*Izz)]), nelem)
+# compliance matrix for each beam element. Use the same explicit transverse
+# shear stiffness as the OWENS section properties above.
+compliance = fill(Diagonal([1/(E*A), 1/(G*A), 1/(G*A), 1/(G*J), 1/(E*Iyy), 1/(E*Izz)]), nelem)
 mass = fill(Diagonal([rho*A, rho*A, rho*A, rho*J, rho*Iyy, rho*Izz]), nelem)
 
 # create assembly of interconnected nonlinear beams

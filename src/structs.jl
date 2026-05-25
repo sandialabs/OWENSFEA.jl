@@ -446,6 +446,11 @@ Struct with mesh definition
 * `none`:
 
 """
+_int_vector(values) = Int.(collect(values))
+_float_vector(values) = Float64.(collect(values))
+_int_matrix(values) = Int.(values)
+_float_matrix(values) = Float64.(values)
+
 mutable struct Mesh
     nodeNum::Vector{Int}
     numEl::Int
@@ -464,6 +469,28 @@ mutable struct Mesh
     hubNodeNum::Int
     hubPos::Vector{Float64}
     hubAngle::Vector{Float64}
+
+    function Mesh(nodeNum,numEl,numNodes,x,y,z,elNum,conn,type,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,nonRotating,hubNodeNum,hubPos,hubAngle)
+        new(
+            _int_vector(nodeNum),
+            Int(numEl),
+            Int(numNodes),
+            _float_vector(x),
+            _float_vector(y),
+            _float_vector(z),
+            _int_vector(elNum),
+            _int_matrix(conn),
+            _int_vector(type),
+            _int_vector(meshSeg),
+            _float_matrix(structuralSpanLocNorm),
+            _int_matrix(structuralNodeNumbers),
+            _int_matrix(structuralElNumbers),
+            Int(nonRotating),
+            Int(hubNodeNum),
+            _float_vector(hubPos),
+            _float_vector(hubAngle),
+        )
+    end
 end
 
 Mesh(nodeNum,numEl,numNodes,x,y,z,elNum,conn,type,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers) = Mesh(nodeNum,numEl,numNodes,x,y,z,elNum,conn,type,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,0,1,zeros(3),zeros(3))
@@ -492,6 +519,17 @@ mutable struct Ort
     Length::Vector{Float64}
     elNum::Matrix{Float64}
     Offset::Matrix{Float64}
+
+    function Ort(Psi_d,Theta_d,Twist_d,Length,elNum,Offset)
+        new(
+            _float_vector(Psi_d),
+            _float_vector(Theta_d),
+            _float_vector(Twist_d),
+            _float_vector(Length),
+            _float_matrix(elNum),
+            _float_matrix(Offset),
+        )
+    end
 end
 
 """
@@ -539,6 +577,10 @@ Struct with element sectional properties, each component is a 1x2 array with dis
 * `aeroCenterOffset::Array{<:float}`: doesn't appear to be used
 * `xaf::Array{<:float}`: x airfoil coordinates (to scale)
 * `yaf::Array{<:float}`: y airfoil coordinates (to scale)
+* `GAy::Union{Nothing,Array{<:float}}`: local-y transverse shear stiffness. When `nothing`, it is computed from `EA`, Poisson's ratio 0.3, and a 5/6 shear correction.
+* `GAz::Union{Nothing,Array{<:float}}`: local-z transverse shear stiffness. When `nothing`, it is computed from `EA`, Poisson's ratio 0.3, and a 5/6 shear correction.
+* `poisson_ratio::Union{Nothing,Array{<:float}}`: Poisson's ratio used for default `GAy`/`GAz` when explicit shear stiffness is omitted.
+* `shear_correction::Union{Nothing,Array{<:float}}`: Timoshenko shear-correction factor used for default `GAy`/`GAz` when explicit shear stiffness is omitted.
 
 # Outputs:
 * `none`:
@@ -573,9 +615,15 @@ mutable struct SectionPropsArray
     yaf
     added_M22
     added_M33
+    GAy
+    GAz
+    poisson_ratio
+    shear_correction
 end
-SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset) = SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,nothing,nothing,zero(rhoA),zero(rhoA)) #convenience function
-SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,xaf,yaf) = SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,xaf,yaf,zero(rhoA),zero(rhoA)) #convenience function
+SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset) = SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,nothing,nothing,zero(rhoA),zero(rhoA),nothing,nothing,nothing,nothing) #convenience function
+SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,xaf,yaf) = SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,xaf,yaf,zero(rhoA),zero(rhoA),nothing,nothing,nothing,nothing) #convenience function
+SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,xaf,yaf,added_M22,added_M33) = SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,xaf,yaf,added_M22,added_M33,nothing,nothing,nothing,nothing) #convenience function
+SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,xaf,yaf,added_M22,added_M33,GAy,GAz) = SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,xaf,yaf,added_M22,added_M33,GAy,GAz,nothing,nothing) #convenience function
 
 """
 Internal, see ?Ort and ?SectionPropsArray

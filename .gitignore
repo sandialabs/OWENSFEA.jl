@@ -1,6 +1,9 @@
 /Manifest.toml
+*/Manifest.toml
 *.DS_Store
+*.cov
 */figs/*
+docs/build/
 *.vtu
 *.pvd
 *.pdf

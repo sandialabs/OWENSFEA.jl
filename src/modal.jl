@@ -164,7 +164,7 @@ function autoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
 end
 
 """
-    modal(feamodel,mesh,el;Omega=0.0,displ=zeros(mesh.numNodes*6),OmegaStart=0.0,returnDynMatrices=false)
+    modal(feamodel,mesh,el;Omega=0.0,displ=zeros(mesh.numNodes*6),OmegaStart=0.0,returnDynMatrices=false,dynMatrixFilename="./linearized_matrices.mat")
 
 Modal analysis
 
@@ -176,6 +176,7 @@ Modal analysis
 * `displ::Array{<:float}`: zeros(mesh.numNodes*6) initial (warm start) displacements for each dof
 * `OmegaStart::float`: rotor speed (Hz) from previous analysis if stepping through various rotor speeds, may be useful in load stepping
 * `returnDynMatrices::Bool`: Flag to save linearized K/C/M matrices for the design
+* `dynMatrixFilename::String`: Output path used when `returnDynMatrices` is true
 
 # Outputs:
 * `freq::Array{<:float}`: sorted modal frequencies (Hz)
@@ -195,7 +196,18 @@ Modal analysis
 * `theta_z_90::Array{<:float}`: NnodesxNmodes out-of-phase mode shape rotation about z
 
 """
-function modal(feamodel,mesh,el;Omega=0.0,displ=zeros(mesh.numNodes*6),OmegaStart=0.0,returnDynMatrices=false,elStorage=nothing,predef=nothing)
+function modal(
+    feamodel,
+    mesh,
+    el;
+    Omega = 0.0,
+    displ = zeros(mesh.numNodes*6),
+    OmegaStart = 0.0,
+    returnDynMatrices = false,
+    dynMatrixFilename = "./linearized_matrices.mat",
+    elStorage = nothing,
+    predef = nothing,
+)
 
     if elStorage===nothing
         elStorage = initialElementCalculations(feamodel,el,mesh) #performs initial element calculations
@@ -214,7 +226,7 @@ function modal(feamodel,mesh,el;Omega=0.0,displ=zeros(mesh.numNodes*6),OmegaStar
     if staticAnalysisSuccessful
         freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,
         U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90,eigVal,eigVec= linearAnalysisModal(feamodel,
-        mesh,el,displ,Omega,elStorage;returnDynMatrices,predef) #performs modal analysis
+        mesh,el,displ,Omega,elStorage;returnDynMatrices,dynMatrixFilename,predef) #performs modal analysis
     else
         error("Static analysis unsuccessful. Exiting")
     end
@@ -225,7 +237,17 @@ end
 """
 Internal, see ?modal
 """
-function  linearAnalysisModal(feamodel,mesh,el,displ,Omega,elStorage;returnDynMatrices=false,predef=nothing)
+function  linearAnalysisModal(
+    feamodel,
+    mesh,
+    el,
+    displ,
+    Omega,
+    elStorage;
+    returnDynMatrices = false,
+    dynMatrixFilename = "./linearized_matrices.mat",
+    predef = nothing,
+)
 
     feamodel.analysisType = "M" #Force type to align with the modal call
     elementOrder = feamodel.elementOrder  #extract element order from feamodel
@@ -268,7 +290,8 @@ function  linearAnalysisModal(feamodel,mesh,el,displ,Omega,elStorage;returnDynMa
         MgTotalU,_ = applyBC(Mg_con,zeros(length(Mg[:,1])),feamodel.BC,numDOFPerNode)
         CgTotalU,_ = applyBC(Cg_con,zeros(length(Cg[:,1])),feamodel.BC,numDOFPerNode)
 
-        filename = "./linearized_matrices.mat"
+        filename = dynMatrixFilename
+        mkpath(dirname(abspath(filename)))
         println("Saving linearized matrices to: $filename")
         file = MAT.matopen(filename,"w")
         MAT.write(file,"Kg_all",Kg)

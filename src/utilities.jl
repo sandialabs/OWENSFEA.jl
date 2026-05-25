@@ -277,7 +277,7 @@ function createTda(jointType,slaveNodeNum,masterNodeNum,psi,theta,joint)
         ly = joint[6]
         lz = joint[7]
 
-        Rda5 = -1.0*LinearAlgebra.I(6)
+        Rda5 = Matrix(-1.0*LinearAlgebra.I(6))
         Rda5[1:3,4:6] = [0 -lz ly;lz 0 -lx;-ly lx 0]
 
         Tda,dDOF,aDOF = getNodeMaps(Rdd5,Rda5,masterNodeNum,slaveNodeNum,slaveDof5,activeDof5,slaveActiveDof5);
@@ -507,17 +507,16 @@ Internal, searches over all DOFs in a structural model and determines and return
 function calculateReducedDOFVector(numNodes,numDofPerNode,isConstrained)
 
     #loop over all DOFs in the model checking if constrained by BC or not
-    index = 1
+    numUnconstrained = 0
     for i=1:numNodes
         for j=1:numDofPerNode
             if (isConstrained[(i-1)*numDofPerNode + j]) == 0
-                #             dofVector(index) = (i-1)*numDofPerNode + j #DOF vector only contains unconstrained DOFs
-                index = index + 1
+                numUnconstrained = numUnconstrained + 1
             end
         end
     end
 
-    dofVector = zeros(Int,index)
+    dofVector = zeros(Int,numUnconstrained)
     index = 1
     for i=1:numNodes
         for j=1:numDofPerNode
@@ -698,7 +697,10 @@ Internal, general routine to calculate an element matrix
 function calculateElement1!(EA,integrationFactor,N1,N2,K)
     len1 = length(N1)
     len2 = length(N2)
-    for i=1:len1
+    size(K, 1) >= len1 && size(K, 2) >= len2 ||
+        throw(DimensionMismatch("element matrix must be at least $(len1)x$(len2), got $(size(K, 1))x$(size(K, 2))"))
+
+    @inbounds for i=1:len1
         for j=1:len2
             K[i,j] = K[i,j] + EA*N1[i]*N2[j]*integrationFactor
         end
@@ -710,7 +712,10 @@ Internal, general routine to calculate an element vector
 """
 function calculateVec1!(f,integrationFactor,N,F)
     len=length(N)
-    for i=1:len
+    length(F) >= len ||
+        throw(DimensionMismatch("element vector must have at least $len entries, got $(length(F))"))
+
+    @inbounds for i=1:len
         F[i] = F[i] + f*N[i]*integrationFactor
     end
 end
@@ -1068,19 +1073,33 @@ global system of equations
 
 """
 function assembly!(Ke,Fe,conn,numNodesPerEl,numDOFPerNode,Kg,Fg)
+    numDOFPerEl = numNodesPerEl*numDOFPerNode
+    length(conn) >= numNodesPerEl ||
+        throw(DimensionMismatch("connectivity must have at least $numNodesPerEl entries, got $(length(conn))"))
+    size(Ke, 1) >= numDOFPerEl && size(Ke, 2) >= numDOFPerEl ||
+        throw(DimensionMismatch("element matrix must be at least $(numDOFPerEl)x$(numDOFPerEl), got $(size(Ke, 1))x$(size(Ke, 2))"))
+    length(Fe) >= numDOFPerEl ||
+        throw(DimensionMismatch("element force vector must have at least $numDOFPerEl entries, got $(length(Fe))"))
 
     count = 1
-    dofList = zeros(Int,numNodesPerEl*numDOFPerNode)
-    for i=1:numNodesPerEl
+    dofList = zeros(Int,numDOFPerEl)
+    @inbounds for i=1:numNodesPerEl
         for j=1:numDOFPerNode
             dofList[count] = (conn[i]-1)*numDOFPerNode + j
             count = count + 1
         end
     end
 
-    numDOFPerEl = length(dofList)
+    minDof = minimum(dofList)
+    maxDof = maximum(dofList)
+    minDof >= 1 || throw(DimensionMismatch("connectivity maps to non-positive global DOF $minDof"))
+    maxDof <= length(Fg) ||
+        throw(DimensionMismatch("force vector has $(length(Fg)) entries but connectivity maps to global DOF $maxDof"))
+    size(Kg, 1) >= maxDof && size(Kg, 2) >= maxDof ||
+        throw(DimensionMismatch("global matrix must include DOF $maxDof, got $(size(Kg, 1))x$(size(Kg, 2))"))
+
     #Assemble element i into global system
-    for j=1:numDOFPerEl
+    @inbounds for j=1:numDOFPerEl
         J = dofList[j]
         Fg[J] = Fg[J] + Fe[j]
         for m=1:numDOFPerEl
@@ -1091,19 +1110,33 @@ function assembly!(Ke,Fe,conn,numNodesPerEl,numDOFPerNode,Kg,Fg)
 end
 
 function assembly(Ke,Fe,conn,numNodesPerEl,numDOFPerNode,Kg,Fg)
+    numDOFPerEl = numNodesPerEl*numDOFPerNode
+    length(conn) >= numNodesPerEl ||
+        throw(DimensionMismatch("connectivity must have at least $numNodesPerEl entries, got $(length(conn))"))
+    size(Ke, 1) >= numDOFPerEl && size(Ke, 2) >= numDOFPerEl ||
+        throw(DimensionMismatch("element matrix must be at least $(numDOFPerEl)x$(numDOFPerEl), got $(size(Ke, 1))x$(size(Ke, 2))"))
+    length(Fe) >= numDOFPerEl ||
+        throw(DimensionMismatch("element force vector must have at least $numDOFPerEl entries, got $(length(Fe))"))
 
     count = 1
-    dofList = zeros(Int,numNodesPerEl*numDOFPerNode)
-    for i=1:numNodesPerEl
+    dofList = zeros(Int,numDOFPerEl)
+    @inbounds for i=1:numNodesPerEl
         for j=1:numDOFPerNode
             dofList[count] = (conn[i]-1)*numDOFPerNode + j
             count = count + 1
         end
     end
 
-    numDOFPerEl = length(dofList)
+    minDof = minimum(dofList)
+    maxDof = maximum(dofList)
+    minDof >= 1 || throw(DimensionMismatch("connectivity maps to non-positive global DOF $minDof"))
+    maxDof <= length(Fg) ||
+        throw(DimensionMismatch("force vector has $(length(Fg)) entries but connectivity maps to global DOF $maxDof"))
+    size(Kg, 1) >= maxDof && size(Kg, 2) >= maxDof ||
+        throw(DimensionMismatch("global matrix must include DOF $maxDof, got $(size(Kg, 1))x$(size(Kg, 2))"))
+
     #Assemble element i into global system
-    for j=1:numDOFPerEl
+    @inbounds for j=1:numDOFPerEl
         J = dofList[j]
         Fg[J] = Fg[J] + Fe[j]
         for m=1:numDOFPerEl

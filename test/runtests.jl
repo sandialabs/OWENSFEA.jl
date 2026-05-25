@@ -1,5 +1,9 @@
 using Test
 
+@testset "Helper Functions" begin
+    include("HelperFunctions.jl")
+end
+
 @testset "Cantilever Beam Modal" begin
     include("CantileverBeamModal.jl")
 end
@@ -14,6 +18,10 @@ end
 
 @testset "Cantilever Beam MODAL 45 degree sweep with rotation" begin
     include("CantileverBeamRotatingModal.jl")
+end
+
+@testset "Spinning beam reaction diagnostics" begin
+    include("SpinningBeamDiagnostics.jl")
 end
 
 @testset "Cantilever Beam Unsteady Response to Unsteady Tip Load" begin
