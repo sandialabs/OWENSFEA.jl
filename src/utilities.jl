@@ -480,6 +480,7 @@ function createJointTransform(joint,numNodes,numDofPerNode)
     for i=1:aNumDof #loop over number of active DOFs
         jointTransform[reducedDOF[i],i] = 1.0 #mapping of active DOFs in full DOF list to reduced DOF list
     end
+    reducedDOFIndex = Dict{Int,Int}(reducedDOF[i] => i for i in eachindex(reducedDOF))
 
     #impose Tda portion of identity matrix and map to appropriate locations
 
@@ -497,8 +498,8 @@ function createJointTransform(joint,numNodes,numDofPerNode)
         Tda,dDOF,aDOF = createTda(jointType,slaveNodeNum,masterNodeNum,psi,theta,joint[i,:])
 
         for m=1:length(aDOF) #loop over global active DOFs associated with joint
+            entry = reducedDOFIndex[Int(aDOF[m])]
             for k = 1:length(dDOF) #loop over global dependent DOFs associated with joint
-                entry=findall(x->x==aDOF[m],reducedDOF)[1]  #determine reduced DOF associated with active DOF from original DOF listing
                 jointTransform[dDOF[k],entry] = Tda[k,m]  #map local joint transformation matrix (Tda) to entries in global transformation matrix (jointTransform)
             end
         end
@@ -698,6 +699,26 @@ function mapVector(Ftemp)
     @inbounds for i=1:a
         I=FEA_ELEMENT_DOF_MAP[i]
         Fel[I] = Ftemp[i]
+    end
+    return Fel
+end
+
+function mapVector(F1,F2,F3,F4,F5,F6)
+    NT = promote_type(eltype(F1), eltype(F2), eltype(F3), eltype(F4), eltype(F5), eltype(F6))
+    Fel = zeros(NT, 12)
+    @inbounds begin
+        Fel[1] = F1[1]
+        Fel[7] = F1[2]
+        Fel[2] = F2[1]
+        Fel[8] = F2[2]
+        Fel[3] = F3[1]
+        Fel[9] = F3[2]
+        Fel[4] = F4[1]
+        Fel[10] = F4[2]
+        Fel[5] = F5[1]
+        Fel[11] = F5[2]
+        Fel[6] = F6[1]
+        Fel[12] = F6[2]
     end
     return Fel
 end
@@ -1179,17 +1200,15 @@ load vector for a static analysis.
 
 """
 function applyBC(Kg,Fg,BC,numDofPerNode)
+    return applyBC!(copy(Kg),copy(Fg),BC,numDofPerNode)
+end
 
+function applyBC!(Kg,Fg,BC,numDofPerNode,eqidx=findall(x->x==-1,BC.map))
     numEq=size(Kg)[1]
-
-    #APPLY BCs FOR PRIMARY VARIABLE
-    Kg_bounded = copy(Kg)
-    Fg_bounded = copy(Fg)
 
     if (BC.numpBC > 0)
         pBC = BC.pBC
         numpBC = size(pBC)[1]
-        eqidx = findall(x->x==-1,BC.map)
         for i=1:numpBC
             nodeNumber = Int(pBC[i,1])
             dofNumber = Int(pBC[i,2])
@@ -1198,12 +1217,12 @@ function applyBC(Kg,Fg,BC,numDofPerNode)
             eqNumber = eqidx[i]#(nodeNumber-1)*numDofPerNode + dofNumber
 
             for j=1:numEq
-                Kg_bounded[eqNumber,j] = 0.0
-                Fg_bounded[j] = Fg_bounded[j] - Kg_bounded[j,eqNumber]*specVal
-                Kg_bounded[j,eqNumber] = 0.0
+                Kg[eqNumber,j] = 0.0
+                Fg[j] = Fg[j] - Kg[j,eqNumber]*specVal
+                Kg[j,eqNumber] = 0.0
             end
-            Fg_bounded[eqNumber] = specVal
-            Kg_bounded[eqNumber,eqNumber] = 1.0
+            Fg[eqNumber] = specVal
+            Kg[eqNumber,eqNumber] = 1.0
         end
     end
 
@@ -1224,7 +1243,7 @@ function applyBC(Kg,Fg,BC,numDofPerNode)
     #
     #     end
     # end
-    return Kg_bounded,Fg_bounded
+    return Kg,Fg
 end
 
 """
@@ -1337,24 +1356,24 @@ function findElementsAssociatedWithNodeNumber(nodeNum,conn,jointData)
         #first see if specified node is a slave node in a joint constraint
         # keep this here for future translation from matlab: res2 = find(ismember(jointData(:,3),nodeNum)) #search joint data slave nodes for node number
         #if it is, change it to the corresponding master node
-        if !isempty(findall(x->x==nodeNum,jointData[:,3]))
+        if any(x->x==nodeNum,jointData[:,3])
             nodeNum = jointData[end,2]
             if length(jointData)>1
                 error("Incorrect Joint Data and nodeNum, too many joints")
             end
         end
 
-        res1 = findall(x->x==nodeNum,jointData[:,2]) #search joint data master nodes for node number
-        if !isempty(res1)
-            jointNodeNumbers = jointData[res1,3]
-
-            for j=1:length(jointNodeNumbers) #loop over joints
+        for jointIndex in axes(jointData, 1)
+            if jointData[jointIndex, 2] == nodeNum
+                jointNodeNumber = jointData[jointIndex, 3]
                 for i=1:numEl
-                    localNodeNumber = findall(x->x==jointNodeNumbers[j],conn[i,:]) #finds indices of nodeNum in connectivity of element i #finds the local node number of element i that corresponds to nodeNum
-                    if !isempty(localNodeNumber) #assigns to an elementList and localNode list
-                        elList = vcat(elList,i)
-                        localNode = vcat(localNode,localNodeNumber[1])
-                        index = index + 1
+                    for localNodeNumber in axes(conn, 2)
+                        if conn[i, localNodeNumber] == jointNodeNumber
+                            push!(elList, i)
+                            push!(localNode, localNodeNumber)
+                            index = index + 1
+                            break
+                        end
                     end
                 end
             end
@@ -1365,11 +1384,13 @@ function findElementsAssociatedWithNodeNumber(nodeNum,conn,jointData)
 
 
     for i=1:numEl #loop over elements
-        localNodeNumber = findall(x->x==nodeNum,conn[i,:]) #finds indices of nodeNum in connectivity of element i #finds the local node number of element i that corresponds to nodeNum
-        if !isempty(localNodeNumber) #assigns to an elementList and localNode list
-            elList = vcat(elList,i)
-            localNode = vcat(localNode,localNodeNumber[1])
-            index = index + 1
+        for localNodeNumber in axes(conn, 2)
+            if conn[i, localNodeNumber] == nodeNum
+                push!(elList, i)
+                push!(localNode, localNodeNumber)
+                index = index + 1
+                break
+            end
         end
     end
 
@@ -1392,7 +1413,7 @@ function getElementConcTerms!(Kconc, Mconc, Cconc, Fconc, elNodes, numDOFPerNode
         elMconc1 = Mconc[(elNodes[1]-1)*numDOFPerNode+1:elNodes[1]*numDOFPerNode, (elNodes[1]-1)*numDOFPerNode+1:elNodes[1]*numDOFPerNode]
         elCconc1 = Cconc[(elNodes[1]-1)*numDOFPerNode+1:elNodes[1]*numDOFPerNode, (elNodes[1]-1)*numDOFPerNode+1:elNodes[1]*numDOFPerNode]
         elFconc1 = Fconc[(elNodes[1]-1)*numDOFPerNode+1:elNodes[1]*numDOFPerNode]
-        append!(appliedNodes, elNodes[1])
+        push!(appliedNodes, elNodes[1])
     end
 
     if elNodes[2] in appliedNodes
@@ -1405,7 +1426,7 @@ function getElementConcTerms!(Kconc, Mconc, Cconc, Fconc, elNodes, numDOFPerNode
         elMconc2 = Mconc[(elNodes[2]-1)*numDOFPerNode+1:elNodes[2]*numDOFPerNode, (elNodes[2]-1)*numDOFPerNode+1:elNodes[2]*numDOFPerNode]
         elCconc2 = Cconc[(elNodes[2]-1)*numDOFPerNode+1:elNodes[2]*numDOFPerNode, (elNodes[2]-1)*numDOFPerNode+1:elNodes[2]*numDOFPerNode]
         elFconc2 = Fconc[(elNodes[2]-1)*numDOFPerNode+1:elNodes[2]*numDOFPerNode]
-        append!(appliedNodes, elNodes[2])
+        push!(appliedNodes, elNodes[2])
     end
 
     elKconc = hcat(elKconc1, elKconc2)

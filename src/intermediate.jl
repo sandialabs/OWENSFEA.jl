@@ -5,7 +5,7 @@ function TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,dispData,Omega,elStorage;
     eldispiter=zero(eldisp),rbData=zeros(9),CN2H=1.0*LinearAlgebra.I(3),delta_t=0.0,
     OmegaDot=0.0,displ_im1=zero(eldisp),displdot_im1=zero(eldisp),timeInt=nothing,
     displddot_im1=zero(eldisp),iterationCount=0,postprocess=false,elementNumber=1,
-    dispOld=nothing,loadStep = 1.0,loadStepPrev = 1.0,predef=nothing,countedNodes = [])
+    dispOld=nothing,loadStep = 1.0,loadStepPrev = 1.0,predef=nothing,countedNodes = Int[])
 
     x = mesh.x
     y = mesh.y
@@ -206,8 +206,8 @@ function TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,dispData,Omega,elStorage;
         if el.rotationalEffects[i]!=1
             Omega = 0.0
             OmegaDot = 0.0
-    		omegaVec = zeros(3)
-    		omegaDotVec = zeros(3)
+            omegaVec = (0.0, 0.0, 0.0)
+            omegaDotVec = (0.0, 0.0, 0.0)
         end
 
         if aeroElasticOn #TODO: why are we doing this if it is done again within timoshenko?

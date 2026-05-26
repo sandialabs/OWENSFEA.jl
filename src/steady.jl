@@ -43,7 +43,7 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
     # dispm1 = zeros(12) #declare type
     dispOld = copy(displ) #initialize scope
     staticAnalysisSuccessfulForLoadStep = false #initialize scope
-    countedNodes = [] #TODO:??
+    countedNodes = Int[] #TODO:??
 
     elementOrder = feamodel.elementOrder #extract element order from feamodel
     numNodesPerEl = elementOrder + 1 #do initialization
@@ -75,6 +75,9 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
     eldisp = zeros(numNodesPerEl*numDOFPerNode)
     Kg1 = zeros(totalNumDOF,totalNumDOF)   #initialize global stiffness matrix
     Fg1 = zeros(totalNumDOF)             #initialize global force vector
+    jointTransform = feamodel.jointTransform
+    hasJointConstraintsFlag = hasJointConstraints(jointTransform)
+    bcEqidx = findall(x->x==-1,feamodel.BC.map)
     #.........................................................................
     while !staticAnalysisComplete && loadStepCount<maxNumLoadSteps
         # staticAnalysisSuccessful = false #initialize staticAnalysisSuccessful flag
@@ -100,8 +103,10 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
             # Kg,_,_ = applyGeneralConcentratedTerms(Kg,Kg,Kg,feamodel.nodalTerms.concStiffGen,feamodel.nodalTerms.concMassGen,feamodel.nodalTerms.concDampGen)
 
             #APPLY BOUNDARY CONDITIONS
-            Kg = applyConstraints(Kg,feamodel.jointTransform) #modify global stiffness matrix for joint constraints using joint transform
-            Fg = applyConstraintsVec(Fg,feamodel.jointTransform) #modify global force vector for joint constraints using joint transform
+            if hasJointConstraintsFlag
+                Kg = applyConstraints(Kg,jointTransform) #modify global stiffness matrix for joint constraints using joint transform
+                Fg = applyConstraintsVec(Fg,jointTransform) #modify global force vector for joint constraints using joint transform
+            end
 
             if feamodel.BC.numpBC==0
                 @warn "No boundary conditions detected. Fully fixing DOFs at Node 1 to faciliate static solve."
@@ -109,24 +114,30 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
                 feamodel.BC.pBC = [1 1 0; 1 2 0; 1 3 0;1 4 0;1 5 0;1 6 0];
             end
 
-            Kg,Fg = applyBC(Kg,Fg,feamodel.BC,numDOFPerNode)  #apply boundary conditions to global stiffness matrix and force vector
+            Kg,Fg = applyBC!(Kg,Fg,feamodel.BC,numDOFPerNode,bcEqidx)  #apply boundary conditions to global stiffness matrix and force vector
             dispOld = copy(displ)  #assign displacement vector from previous iteration
 
             if nlParams.iterationType == "NR"  #system solve, norm calculation for newton-raphson iteration
                 delta_displ = Kg\Fg
-                delta_displ = feamodel.jointTransform*delta_displ
+                if hasJointConstraintsFlag
+                    delta_displ = jointTransform*delta_displ
+                end
                 displ = displ + delta_displ
                 uNorm = calcUnorm(displ-delta_displ,displ)
             elseif nlParams.iterationType == "DI" #system solve, norm calculation for direct iteration
                 displ_last = copy(displ)
                 displ = Kg\Fg
-                displ = feamodel.jointTransform*displ
+                if hasJointConstraintsFlag
+                    displ = jointTransform*displ
+                end
                 uNorm = calcUnorm(displ_last,displ)
                 gamm = 0.5
                 displ = (1-gamm)*displ + gamm*displ_last
             else                                        #system solve for linear case
                 displ = Kg\Fg
-                displ = feamodel.jointTransform*displ
+                if hasJointConstraintsFlag
+                    displ = jointTransform*displ
+                end
                 uNorm = 0
             end
             iterationCount = iterationCount +1         #increment iteration count
@@ -151,7 +162,7 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
     FReaction = zeros(mesh.numEl*6)
     for reactionNodeNumber = 1:mesh.numEl
         try
-            countedNodes = [] #TODO:??
+            countedNodes = Int[] #TODO:??
             FReaction[(reactionNodeNumber-1)*6+1:reactionNodeNumber*6] = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ,rbData,Omega,OmegaDot,CN2H,countedNodes)
         catch
             # This is where a joint is println(reactionNodeNumber)
