@@ -398,43 +398,60 @@ Internal, assembles the element matrix into the global system of equations
 * `Kg`:             global system matrix with assembled element
 """
 function assemblyMatrixOnly(Ke,conn,numNodesPerEl,numDOFPerNode,Kg)
-
-    count = 1
-    dofList = zeros(Int,numNodesPerEl*numDOFPerNode)
-    for i=1:numNodesPerEl
-        for j=1:numDOFPerNode
-            dofList[count] = (conn[i]-1)*numDOFPerNode + j
-            count = count +1
-        end
-    end
-
-    Kg[dofList,dofList] = Kg[dofList,dofList] + Ke
-    # numDOFPerEl = length(dofList)
-    # #Assemble element i into global system
-    #         for j=1:numDOFPerEl
-    #             J = dofList(j)
-    #             for m=1:numDOFPerEl
-    #                 M = dofList(m)
-    #                 Kg(J,M) = Kg(J,M) + Ke(j,m)
-    #             end
-    #         end
-
+    _assemblyMatrixOnly!(Ke,conn,numNodesPerEl,numDOFPerNode,Kg)
     return Kg
-
 end
 
 function assemblyMatrixOnly!(Ke,conn,numNodesPerEl,numDOFPerNode,Kg)
+    _assemblyMatrixOnly!(Ke,conn,numNodesPerEl,numDOFPerNode,Kg)
+end
+
+function _assemblyMatrixOnly!(Ke,conn,numNodesPerEl,numDOFPerNode,Kg)
+    numDOFPerEl = numNodesPerEl*numDOFPerNode
+    length(conn) >= numNodesPerEl ||
+        throw(DimensionMismatch("connectivity must have at least $numNodesPerEl entries, got $(length(conn))"))
+    size(Ke, 1) == numDOFPerEl && size(Ke, 2) == numDOFPerEl ||
+        throw(DimensionMismatch("element matrix must be $(numDOFPerEl)x$(numDOFPerEl), got $(size(Ke, 1))x$(size(Ke, 2))"))
 
     count = 1
-    dofList = zeros(Int,numNodesPerEl*numDOFPerNode)
-    for i=1:numNodesPerEl
+    dofList = zeros(Int,numDOFPerEl)
+    @inbounds for i=1:numNodesPerEl
         for j=1:numDOFPerNode
             dofList[count] = (conn[i]-1)*numDOFPerNode + j
-            count = count +1
+            count = count + 1
         end
     end
 
-    Kg[dofList,dofList] = Kg[dofList,dofList] + Ke
+    minDof = minimum(dofList)
+    maxDof = maximum(dofList)
+    minDof >= 1 || throw(DimensionMismatch("connectivity maps to non-positive global DOF $minDof"))
+    size(Kg, 1) >= maxDof && size(Kg, 2) >= maxDof ||
+        throw(DimensionMismatch("global matrix must include DOF $maxDof, got $(size(Kg, 1))x$(size(Kg, 2))"))
+
+    if _has_duplicate_nodes(conn,numNodesPerEl)
+        Kg[dofList,dofList] = Kg[dofList,dofList] + Ke
+    else
+        @inbounds for j=1:numDOFPerEl
+            J = dofList[j]
+            for m=1:numDOFPerEl
+                M = dofList[m]
+                Kg[J,M] = Kg[J,M] + Ke[j,m]
+            end
+        end
+    end
+    return nothing
+end
+
+function _has_duplicate_nodes(conn,numNodesPerEl)
+    @inbounds for i=2:numNodesPerEl
+        nodeI = conn[i]
+        for j=1:i-1
+            if nodeI == conn[j]
+                return true
+            end
+        end
+    end
+    return false
 end
 
 """
