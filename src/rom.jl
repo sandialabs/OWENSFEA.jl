@@ -221,6 +221,25 @@ function applyBCModalVec(F,numpBC,bcMap)
 	return Fnew
 end
 
+function modalStateVector(state, fullState, feamodel, BC, rom, stateName)
+	if state isa AbstractVector
+		return state
+	elseif state isa Number && iszero(state)
+		reducedState = feamodel.jointTransform' * fullState
+		bcState = applyBCModalVec(reducedState, BC.numpBC, BC.map)
+		return rom.invPhi * bcState
+	else
+		throw(ArgumentError("ROM $(stateName) must be a modal vector or zero-initialized scalar state"))
+	end
+end
+
+function modalStateFromDispData(dispData, feamodel, BC, rom)
+	eta_s = modalStateVector(dispData.eta_s, dispData.displ_s, feamodel, BC, rom, "displacement")
+	etadot_s = modalStateVector(dispData.etadot_s, dispData.displdot_s, feamodel, BC, rom, "velocity")
+	etaddot_s = modalStateVector(dispData.etaddot_s, dispData.displddot_s, feamodel, BC, rom, "acceleration")
+	return eta_s, etadot_s, etaddot_s
+end
+
 """
 
 	structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega,OmegaDot,time,delta_t,elStorage,rom,Fexternal,Fdof,CN2H,rbData)
@@ -385,9 +404,7 @@ function  structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega,OmegaDo
 			#Apply BCs to global system
 			Fg     = applyBCModalVec(Fg,BC.numpBC,BC.map)
 
-			eta_s = dispData.eta_s
-			etadot_s = dispData.etadot_s
-			etaddot_s = dispData.etaddot_s
+			eta_s, etadot_s, etaddot_s = modalStateFromDispData(dispData, feamodel, BC, rom)
 
 			Phi       = rom.Phi
 			Feta = (Phi')*Fg   #transform global displacement vector to modal space
