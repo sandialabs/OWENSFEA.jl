@@ -140,11 +140,27 @@ end
     @test Fg_returned == Fg
     @test Kg_returned == Kg
 
+    Kg_matrix_only = zeros(8, 8)
+    OWENSFEA.assemblyMatrixOnly!(Ke, conn, 2, 2, Kg_matrix_only)
+    @test Kg_matrix_only == Kg
+    @test OWENSFEA.assemblyMatrixOnly(Ke, conn, 2, 2, zeros(8, 8)) == Kg
+
+    duplicate_conn = [1, 1]
+    duplicate_dofs = [1, 2, 1, 2]
+    Kg_duplicate_expected = zeros(2, 2)
+    Kg_duplicate_expected[duplicate_dofs,duplicate_dofs] = Kg_duplicate_expected[duplicate_dofs,duplicate_dofs] + Ke
+    Kg_duplicate = zeros(2, 2)
+    OWENSFEA.assemblyMatrixOnly!(Ke, duplicate_conn, 2, 2, Kg_duplicate)
+    @test Kg_duplicate == Kg_duplicate_expected
+
     @test_throws DimensionMismatch OWENSFEA.calculateElement1!(2.0, 0.25, [1.0, 2.0], [3.0, 5.0], zeros(1, 2))
     @test_throws DimensionMismatch OWENSFEA.calculateVec1!(4.0, 0.5, [2.0, 3.0], zeros(1))
     @test_throws DimensionMismatch OWENSFEA.assembly!(zeros(3, 4), Fe, conn, 2, 2, zeros(8, 8), zeros(8))
     @test_throws DimensionMismatch OWENSFEA.assembly!(Ke, Fe, [0, 4], 2, 2, zeros(8, 8), zeros(8))
     @test_throws DimensionMismatch OWENSFEA.assembly!(Ke, Fe, conn, 2, 2, zeros(7, 7), zeros(7))
+    @test_throws DimensionMismatch OWENSFEA.assemblyMatrixOnly!(zeros(3, 4), conn, 2, 2, zeros(8, 8))
+    @test_throws DimensionMismatch OWENSFEA.assemblyMatrixOnly!(Ke, [0, 4], 2, 2, zeros(8, 8))
+    @test_throws DimensionMismatch OWENSFEA.assemblyMatrixOnly!(Ke, conn, 2, 2, zeros(7, 7))
 end
 
 @testset "Mesh and orientation constructors normalize input types" begin
