@@ -592,6 +592,8 @@ Struct with element sectional properties, each component is a 1x2 array with dis
 * `GAz::Union{Nothing,Array{<:float}}`: local-z transverse shear stiffness. When `nothing`, it is computed from `EA`, Poisson's ratio 0.3, and a 5/6 shear correction.
 * `poisson_ratio::Union{Nothing,Array{<:float}}`: Poisson's ratio used for default `GAy`/`GAz` when explicit shear stiffness is omitted.
 * `shear_correction::Union{Nothing,Array{<:float}}`: Timoshenko shear-correction factor used for default `GAy`/`GAz` when explicit shear stiffness is omitted.
+* `flapwiseEAOffset::Array{<:float}`: flapwise elastic-axis offset from legacy section-property inputs.
+* `edgewiseEAOffset::Array{<:float}`: edgewise elastic-axis offset from legacy section-property inputs.
 
 # Outputs:
 * `none`:
@@ -630,7 +632,23 @@ mutable struct SectionPropsArray
     GAz
     poisson_ratio
     shear_correction
+    flapwiseEAOffset
+    edgewiseEAOffset
 end
+
+function SectionPropsArray(
+    ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,
+    alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,
+    xaf,yaf,added_M22,added_M33,GAy,GAz,poisson_ratio,shear_correction,
+)
+    return SectionPropsArray(
+        ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,
+        alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,
+        xaf,yaf,added_M22,added_M33,GAy,GAz,poisson_ratio,shear_correction,
+        zero(rhoA),zero(rhoA),
+    )
+end
+
 SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset) = SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,nothing,nothing,zero(rhoA),zero(rhoA),nothing,nothing,nothing,nothing) #convenience function
 SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,xaf,yaf) = SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,xaf,yaf,zero(rhoA),zero(rhoA),nothing,nothing,nothing,nothing) #convenience function
 SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,xaf,yaf,added_M22,added_M33) = SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset,xaf,yaf,added_M22,added_M33,nothing,nothing,nothing,nothing) #convenience function
