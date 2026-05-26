@@ -24,6 +24,10 @@ end
     include("SpinningBeamDiagnostics.jl")
 end
 
+@testset "Nonlinear reduced order model" begin
+    include("NonlinearROM.jl")
+end
+
 @testset "Cantilever Beam Unsteady Response to Unsteady Tip Load" begin
     include("UnsteadyBeam.jl")
 end
