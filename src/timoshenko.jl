@@ -61,6 +61,13 @@ function transverseShearStiffness(sectionProps, N)
     return GAy, GAz
 end
 
+@inline function _rotating_frame_inertial_force(rhoA, O1, O2, O3, O1dot, O2dot, O3dot, x, y, z)
+    f1 = rhoA*((O2^2 + O3^2)*x - O1*O2*y - O1*O3*z + O3dot*y - O2dot*z)
+    f2 = rhoA*((O1^2 + O3^2)*y - O2*O3*z - O1*O2*x + O1dot*z - O3dot*x)
+    f3 = rhoA*((O1^2 + O2^2)*z - O1*O3*x - O2*O3*y + O2dot*x - O1dot*y)
+    return f1, f2, f3
+end
+
 """
     calculateTimoshenkoElementInitialRun(elementOrder,modalFlag,xloc,sectionProps,sweepAngle,coneAngle,rollAngle,aeroSweepAngle,x,y,z,concMassFlag,concMass,Omega)
 
@@ -725,18 +732,28 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
             sectionAeroMoment = sectionAeroLift*(acgp+agp)
         end
 
+        xcm_local = xbarlocal
+        ycm_local = ybarlocal + ycm
+        zcm_local = zbarlocal + zcm
+        inertiaLoad_1, inertiaLoad_2, inertiaLoad_3 = _rotating_frame_inertial_force(
+            rhoA, O1, O2, O3, O1dot, O2dot, O3dot, xcm_local, ycm_local, zcm_local,
+        )
+        inertiaMoment_1 = ycm*inertiaLoad_3 - zcm*inertiaLoad_2
+        inertiaMoment_2 = zcm*inertiaLoad_1
+        inertiaMoment_3 = -ycm*inertiaLoad_1
+
         #distributed/body force load calculations
-        f1 = rhoA*((O2^2 + O3^2)*xbarlocal - O1*O2*ybarlocal - O1*O3*zbarlocal + O3dot*ybarlocal - O2dot*zbarlocal) - disLoadgpLocal_1
+        f1 = inertiaLoad_1 - disLoadgpLocal_1
         calculateVec1!(f1,integrationFactor,N1,F1)
-        f2 = rhoA*((O1^2+O3^2)*ybarlocal - zbarlocal*O2*O3 - xbarlocal*O1*O2 + O1dot*zbarlocal - O3dot*xbarlocal) - disLoadgpLocal_2
+        f2 = inertiaLoad_2 - disLoadgpLocal_2
         calculateVec1!(f2,integrationFactor,N2,F2)
-        f3 = sectionAeroLift + rhoA*((O1^2+O2^2)*zbarlocal - O3*O1*xbarlocal - O2*O3*ybarlocal + O2dot*xbarlocal - O1dot*ybarlocal) - disLoadgpLocal_3
+        f3 = sectionAeroLift + inertiaLoad_3 - disLoadgpLocal_3
         calculateVec1!(f3,integrationFactor,N3,F3)
-        f4 = sectionAeroMoment + rhoA*(xbarlocal*(O1*O2*zcm - ycm*O1*O3)-ybarlocal*(ycm*O2*O3 + zcm*(O1^2+O3^2)) + zbarlocal*(ycm*(O1^2+O2^2)+zcm*O2*O3) + ycm*(O2dot*xbarlocal - O1dot*ybarlocal) - zcm*(O1dot*zbarlocal - O3dot*xbarlocal)) - disMomentgp_1
+        f4 = sectionAeroMoment + inertiaMoment_1 - disMomentgp_1
         calculateVec1!(f4,integrationFactor,N4,F4)
-        f5 = rhoA*zcm*(xbarlocal*(O2^2+O3^2) - ybarlocal*O1*O2 - zbarlocal*O1*O3 - O2dot*zbarlocal + O3dot*ybarlocal) - disMomentgp_2
+        f5 = inertiaMoment_2 - disMomentgp_2
         calculateVec1!(f5,integrationFactor,N5,F5)
-        f6 = rhoA*ycm*((O1*O3*zbarlocal + O1*O2*ybarlocal)-(xbarlocal*(O2^2+O3^2)) - O3dot*ybarlocal + O2dot*zbarlocal) - disMomentgp_3
+        f6 = inertiaMoment_3 - disMomentgp_3
         calculateVec1!(f6,integrationFactor,N6,F6)
 
         if aeroElasticOn && (bgp != 0) #aeroelastic calculations

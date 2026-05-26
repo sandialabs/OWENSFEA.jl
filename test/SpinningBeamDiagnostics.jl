@@ -1,7 +1,7 @@
 using Test
 import OWENSFEA
 
-function _spinning_beam_fixture(; L=2.0, nelem=4, y_offset=0.0, stiffness_scale=1.0)
+function _spinning_beam_fixture(; L=2.0, nelem=4, y_offset=0.0, section_ycm=0.0, section_zcm=0.0, stiffness_scale=1.0)
     b = 0.05
     h = 0.02
     A = b*h
@@ -14,11 +14,11 @@ function _spinning_beam_fixture(; L=2.0, nelem=4, y_offset=0.0, stiffness_scale=
     J = Iyy + Izz
 
     rhoA = rho*A
-    zeros2 = [0.0, 0.0]
+    pair(value) = fill(value, 2)
     section_props = Array{OWENSFEA.SectionPropsArray, 1}(undef, nelem)
     for i = 1:nelem
         section_props[i] = OWENSFEA.SectionPropsArray(
-            zeros2, zeros2,
+            pair(0.0), pair(0.0),
             fill(rhoA, 2),
             fill(E*Iyy, 2),
             fill(E*Izz, 2),
@@ -27,11 +27,11 @@ function _spinning_beam_fixture(; L=2.0, nelem=4, y_offset=0.0, stiffness_scale=
             fill(rho*Iyy, 2),
             fill(rho*Izz, 2),
             fill(rho*J, 2),
-            zeros2, zeros2, zeros2, zeros2,
-            zeros2, zeros2, zeros2, zeros2, zeros2, zeros2,
-            zeros2, zeros2, zeros2, zeros2,
+            pair(section_zcm), pair(section_ycm), pair(0.0), pair(0.0),
+            pair(0.0), pair(0.0), pair(0.0), pair(0.0), pair(0.0), pair(0.0),
+            pair(0.0), pair(0.0), pair(0.0), pair(0.0),
             nothing, nothing,
-            zeros2, zeros2,
+            pair(0.0), pair(0.0),
             fill(G*A, 2),
             fill(G*A, 2),
         )
@@ -105,6 +105,26 @@ function _root_reaction(mesh, el; Omega=0.0, OmegaDot=0.0)
         )
     end
     return success, reaction[1:6]
+end
+
+@testset "Sectional CG offset steady-spin reactions" begin
+    section_ycm = 0.3
+    spin_hz = 5.0
+    mesh, el, rhoA, L = _spinning_beam_fixture(; section_ycm, stiffness_scale=1e6)
+    success, reaction = _root_reaction(mesh, el; Omega=spin_hz)
+
+    omega = 2*pi*spin_hz
+    expected_axial_reaction = -rhoA*omega^2*L^2/2
+    expected_side_reaction = -rhoA*omega^2*section_ycm*L
+    expected_moment_scale = abs(rhoA*omega^2*section_ycm*L^2)
+
+    @test success
+    @test isapprox(reaction[1], expected_axial_reaction; rtol=1e-3)
+    @test isapprox(reaction[2], expected_side_reaction; rtol=1e-3)
+    @test isapprox(reaction[3], 0.0; atol=1e-10*abs(expected_axial_reaction))
+    @test isapprox(reaction[4], 0.0; atol=1e-10*expected_moment_scale)
+    @test isapprox(reaction[5], 0.0; atol=1e-10*expected_moment_scale)
+    @test isapprox(reaction[6], 0.0; atol=1e-7*expected_moment_scale)
 end
 
 @testset "Eccentric spinning beam spin-acceleration reactions" begin
