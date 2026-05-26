@@ -16,7 +16,8 @@ clear error instead of reaching undefined tangent-matrix state.
 
 `test/SpinningBeamDiagnostics.jl` pins structural-only spin reactions before
 gyric or spin-softening equation changes. The cases include straight and
-eccentric beams under scalar z-axis spin acceleration. The eccentric case also
+eccentric beams under scalar z-axis spin acceleration, plus a steady
+rigid-body spin-vector path for non-z spin axes. The eccentric case also
 documents the current root-moment gap: the x-force from the offset is present,
 while the reported spin-axis torque omits the corresponding `y^2` contribution.
 
