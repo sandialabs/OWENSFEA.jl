@@ -1,7 +1,8 @@
 """
 
 staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
-    reactionNodeNumber=1, OmegaDot=0.0, Fdof=[1], Fexternal=[0.0])
+    reactionNodeNumber=1, OmegaDot=0.0, Fdof=[1], Fexternal=[0.0],
+    rbData=zeros(9), CN2H=1.0*LinearAlgebra.I(3))
 
 This function performs a static analysis and returns displacement
 values and a flag denoting successful/unsuccessful analysis
@@ -18,12 +19,16 @@ values and a flag denoting successful/unsuccessful analysis
 * `OmegaDot::Float`: Steady State Rotational Acceleration
 * `Fdof::Array{<:Int}`: Global Dofs where Fexternal is acting, where max dof = nelem*ndof
 * `Fexternal{<:Float}`: Forces or moments associated with the Fdofs specified
+* `rbData::Vector`: optional hub-frame rigid-body acceleration, angular velocity,
+  and angular acceleration vector. Angular rates are in rad/s and rad/s^2.
+* `CN2H::Matrix`: optional inertial-to-hub transform used for gravity/body loads.
 #Outputs
 * `displ`:                    vector of displacemetns
 * `staticAnalysisSuccessful`: boolean flag denoting successful static analysis
 """
 function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
-    reactionNodeNumber=1, OmegaDot=0.0, Fdof=[1], Fexternal=[0.0])
+    reactionNodeNumber=1, OmegaDot=0.0, Fdof=[1], Fexternal=[0.0],
+    rbData=zeros(9), CN2H=1.0*LinearAlgebra.I(3))
 
     feamodel.analysisType = "S" #Force type to align with the static/steady call
 
@@ -81,7 +86,8 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
             Kg = zero(Kg1)
             Fg = zero(Fg1)
             TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,displ,Omega,elStorage;
-                Kg,Fg,iterationCount,dispOld,loadStepPrev,loadStep,OmegaDot,countedNodes)
+                Kg,Fg,iterationCount,dispOld,loadStepPrev,loadStep,OmegaDot,
+                rbData,CN2H,countedNodes)
 
             # Fexternal, Fdof = externalForcingStatic()  #TODO: get arbitrary external loads from externalForcingStatic() function
             for i=1:length(Fdof)
@@ -141,8 +147,6 @@ function staticAnalysis(feamodel,mesh,el,displ,Omega,OmegaStart,elStorage;
     #feamodel.platformTurbineConnectionNodeNumber #TODO: multiple points?  the whole mesh?
     timeInt = nothing
     dispData = copy(displ)
-    rbData = zeros(9)
-    CN2H = 1.0*LinearAlgebra.I(3)
     #Calculate reaction at turbine base (hardwired to node number 1)
     FReaction = zeros(mesh.numEl*6)
     for reactionNodeNumber = 1:mesh.numEl

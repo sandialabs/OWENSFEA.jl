@@ -263,23 +263,27 @@ function calcUnorm(unew,uold)
     return LinearAlgebra.norm(unew-uold)/LinearAlgebra.norm(unew)
 end
 
+const FEA_ELEMENT_DOF_MAP = (1, 7, 2, 8, 3, 9, 4, 10, 5, 11, 6, 12)
+
+function mapElementDofMatrix(Ktemp)
+    size(Ktemp) == (12, 12) ||
+        throw(DimensionMismatch("element matrix must be 12x12, got $(size(Ktemp, 1))x$(size(Ktemp, 2))"))
+
+    Kel = zeros(eltype(Ktemp), 12, 12)
+    @inbounds for i=1:12
+        I = FEA_ELEMENT_DOF_MAP[i]
+        for j=1:12
+            J = FEA_ELEMENT_DOF_MAP[j]
+            Kel[I,J] = Ktemp[i,j]
+        end
+    end
+    return Kel
+end
+
 """
 Internal, function to form total stifness matrix and transform to desired DOF mapping
 """
 function mapMatrixNonSym2(K11,K12,K13,K14,K15,K16,K21,K22,K23,K24,K25,K26,K31,K32,K33,K34,K35,K36,K41,K42,K43,K44,K45,K46,K51,K52,K53,K54,K55,K56,K61,K62,K63,K64,K65,K66)
-
-    T = [1 0 0 0 0 0 0 0 0 0 0 0;
-    0 0 0 0 0 0 1 0 0 0 0 0;
-    0 1 0 0 0 0 0 0 0 0 0 0;
-    0 0 0 0 0 0 0 1 0 0 0 0;
-    0 0 1 0 0 0 0 0 0 0 0 0;
-    0 0 0 0 0 0 0 0 1 0 0 0;
-    0 0 0 1 0 0 0 0 0 0 0 0;
-    0 0 0 0 0 0 0 0 0 1 0 0;
-    0 0 0 0 1 0 0 0 0 0 0 0;
-    0 0 0 0 0 0 0 0 0 0 1 0;
-    0 0 0 0 0 1 0 0 0 0 0 0;
-    0 0 0 0 0 0 0 0 0 0 0 1];
 
     Ktemp = zeros(12,12)
 
@@ -325,24 +329,7 @@ function mapMatrixNonSym2(K11,K12,K13,K14,K15,K16,K21,K22,K23,K24,K25,K26,K31,K3
     Ktemp[11:12,9:10] = K65
     Ktemp[11:12,11:12] = K66
 
-    #map to FEA numbering
-    # T2 = SparseArrays.sparse(T)
-    Kel = T'*Ktemp*T
-
-    #declare map
-    # map = [1, 7, 2, 8, 3, 9,...
-    #       4, 10, 5, 11, 6, 12];
-    #
-    # #map to FEA numbering
-    # for i=1:a
-    #     I=map[i];
-    #     for j=1:a
-    #         J=map(j);
-    #         Kel(I,J) = Ktemp(i,j);
-    #     end
-    # end
-
-    return Kel
+    return mapElementDofMatrix(Ktemp)
 
 end
 
@@ -350,37 +337,6 @@ end
 Internal, function to form total stifness matrix and transform to desired DOF mapping
 """
 function mapMatrixNonSym(Ktemp)
-
-    T = [1 0 0 0 0 0 0 0 0 0 0 0;
-    0 0 0 0 0 0 1 0 0 0 0 0;
-    0 1 0 0 0 0 0 0 0 0 0 0;
-    0 0 0 0 0 0 0 1 0 0 0 0;
-    0 0 1 0 0 0 0 0 0 0 0 0;
-    0 0 0 0 0 0 0 0 1 0 0 0;
-    0 0 0 1 0 0 0 0 0 0 0 0;
-    0 0 0 0 0 0 0 0 0 1 0 0;
-    0 0 0 0 1 0 0 0 0 0 0 0;
-    0 0 0 0 0 0 0 0 0 0 1 0;
-    0 0 0 0 0 1 0 0 0 0 0 0;
-    0 0 0 0 0 0 0 0 0 0 0 1];
-
-    #map to FEA numbering
-    T2 = SparseArrays.sparse(T)
-    Kel = T2'*Ktemp*T2
-
-    #declare map
-    # map = [1, 7, 2, 8, 3, 9,...
-    #       4, 10, 5, 11, 6, 12];
-    #
-    # #map to FEA numbering
-    # for i=1:a
-    #     I=map[i];
-    #     for j=1:a
-    #         J=map(j);
-    #         Kel(I,J) = Ktemp(i,j);
-    #     end
-    # end
-
-    return Kel
+    return mapElementDofMatrix(Ktemp)
 
 end

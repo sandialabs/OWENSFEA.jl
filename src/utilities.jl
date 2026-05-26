@@ -636,7 +636,7 @@ function calculateShapeFunctions(elementOrder,xi,x)
     #Linear interpolation functions
     N = zeros(elementOrder+1)
     p_N_xi = zeros(elementOrder+1)
-    if elementOrder == 1
+    @inbounds if elementOrder == 1
         N[1] = 0.5*(1.0 - xi)
         N[2] = 0.5*(1.0 + xi)
 
@@ -645,7 +645,7 @@ function calculateShapeFunctions(elementOrder,xi,x)
     end
 
     #Quadratic interpolation functions
-    if elementOrder == 2
+    @inbounds if elementOrder == 2
         N[1] = 0.5*(xi-1.0)*xi
         N[2] = 1.0-xi^2
         N[3] = 0.5*(xi+1.0)*xi
@@ -658,12 +658,14 @@ function calculateShapeFunctions(elementOrder,xi,x)
     numNodesPerEl = length(N)
     NT = promote_type(eltype(p_N_xi), eltype(x))
     Jac = zero(NT)
-    for i=1:numNodesPerEl
+    length(x) >= numNodesPerEl ||
+        throw(DimensionMismatch("coordinate vector must have at least $numNodesPerEl entries, got $(length(x))"))
+    @inbounds for i=1:numNodesPerEl
         Jac = Jac + p_N_xi[i]*x[i]
     end
 
     p_N_x = zeros(NT, numNodesPerEl)
-    for i=1:numNodesPerEl
+    @inbounds for i=1:numNodesPerEl
         p_N_x[i] = p_N_xi[i]/Jac
     end
     return N,p_N_x,Jac
@@ -675,7 +677,9 @@ Internal, linear interpolation
 function interpolateVal(valNode::AbstractArray{T}, N::AbstractVector{S}) where {T, S}
     TS = promote_type(T, S)
     valGP = zero(TS)
-    for i in eachindex(N)
+    length(valNode) >= length(N) ||
+        throw(DimensionMismatch("value vector must have at least $(length(N)) entries, got $(length(valNode))"))
+    @inbounds for i in eachindex(N)
         valGP = valGP + N[i]*valNode[i]
     end
     return valGP
@@ -689,11 +693,10 @@ function mapVector(Ftemp)
     a=length(Ftemp)
     Fel=zeros(a)
 
-    # #declare map
-    map = [1, 7, 2, 8, 3, 9, 4, 10, 5, 11, 6, 12]
-
-    for i=1:a
-        I=map[i]
+    a == length(FEA_ELEMENT_DOF_MAP) ||
+        throw(DimensionMismatch("element vector must have $(length(FEA_ELEMENT_DOF_MAP)) entries, got $a"))
+    @inbounds for i=1:a
+        I=FEA_ELEMENT_DOF_MAP[i]
         Fel[I] = Ftemp[i]
     end
     return Fel
