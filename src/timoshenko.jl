@@ -19,6 +19,23 @@ function optionalInterpolatedProperty(sectionProps, field::Symbol, N, default)
     return isnothing(value) ? default : interpolateVal(value, N)
 end
 
+@inline function _add_conc_load!(Fe, concLoad)
+    @inbounds for i=1:6
+        Fe[i] += concLoad[i,1]
+        Fe[i+6] += concLoad[i,2]
+    end
+    return Fe
+end
+
+function _without_conc_load(F, concLoad, scale=one(eltype(F)))
+    out = copy(F)
+    @inbounds for i=1:6
+        out[i] -= scale*concLoad[i,1]
+        out[i+6] -= scale*concLoad[i,2]
+    end
+    return out
+end
+
 """
     transverseShearStiffness(sectionProps, N) -> GAy, GAz
 
@@ -557,7 +574,6 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
 
     twistAvg_d = rollAngle + 0.5*(sectionProps.twist[1] + sectionProps.twist[2])
     lambda = calculateLambda(sweepAngle*pi/180.0,coneAngle*pi/180.0,twistAvg_d.*pi/180.0)
-    lambdaSlim = lambda[1:3,1:3]
 
     dispLocal = lambda*disp_iter
 
@@ -575,17 +591,13 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
     omegaDot_x=omegaDotVec[1]
     omegaDot_y=omegaDotVec[2]
     omegaDot_z = omegaDotVec[3] + OmegaDot
-    Ohub = [omega_x;omega_y;omega_z]
-    ODotHub = [omegaDot_x;omegaDot_y;omegaDot_z]
-    Oel = lambdaSlim*Ohub
-    ODotel = lambdaSlim*ODotHub
-    O1 = Oel[1]
-    O2 = Oel[2]
-    O3 = Oel[3]
+    O1 = lambda[1,1]*omega_x + lambda[1,2]*omega_y + lambda[1,3]*omega_z
+    O2 = lambda[2,1]*omega_x + lambda[2,2]*omega_y + lambda[2,3]*omega_z
+    O3 = lambda[3,1]*omega_x + lambda[3,2]*omega_y + lambda[3,3]*omega_z
 
-    O1dot = ODotel[1]
-    O2dot = ODotel[2]
-    O3dot = ODotel[3]
+    O1dot = lambda[1,1]*omegaDot_x + lambda[1,2]*omegaDot_y + lambda[1,3]*omegaDot_z
+    O2dot = lambda[2,1]*omegaDot_x + lambda[2,2]*omegaDot_y + lambda[2,3]*omegaDot_z
+    O3dot = lambda[3,1]*omegaDot_x + lambda[3,2]*omegaDot_y + lambda[3,3]*omegaDot_z
 
     if eltype(input.gravityOn) == Bool && input.gravityOn == true
         a_x_n = 0.0 #accelerations in inertial frame
@@ -607,11 +619,13 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
     a_y_body = accelVec[2]
     a_z_body = accelVec[3]
 
-    a_grav = CN2H*[a_x_n; a_y_n; a_z_n]
+    a_grav_1 = CN2H[1,1]*a_x_n + CN2H[1,2]*a_y_n + CN2H[1,3]*a_z_n
+    a_grav_2 = CN2H[2,1]*a_x_n + CN2H[2,2]*a_y_n + CN2H[2,3]*a_z_n
+    a_grav_3 = CN2H[3,1]*a_x_n + CN2H[3,2]*a_y_n + CN2H[3,3]*a_z_n
 
-    a_x = a_x_body + a_grav[1]
-    a_y = a_y_body + a_grav[2]
-    a_z = a_z_body + a_grav[3]
+    a_x = a_x_body + a_grav_1
+    a_y = a_y_body + a_grav_2
+    a_z = a_z_body + a_grav_3
 
 
     #Integration loop
@@ -680,24 +694,20 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
         #Calculate Centrifugal load vector and gravity load vector
         #eventually incorporate lambda into gp level to account for variable
         #twist
-        posLocal = lambdaSlim*[xgp;ygp;zgp]
-        xbarlocal = posLocal[1]
-        ybarlocal = posLocal[2]
-        zbarlocal = posLocal[3]
+        xbarlocal = lambda[1,1]*xgp + lambda[1,2]*ygp + lambda[1,3]*zgp
+        ybarlocal = lambda[2,1]*xgp + lambda[2,2]*ygp + lambda[2,3]*zgp
+        zbarlocal = lambda[3,1]*xgp + lambda[3,2]*ygp + lambda[3,3]*zgp
 
         fx = rhoA*a_x #let these loads be defined in the inertial frame
         fy = rhoA*a_y + added_M22*a_y_body
         fz = rhoA*a_z + added_M33*a_z_body
 
-        rvec = [ 0; ycm; zcm]
-
-        fi_hub = [fx;fy;fz]
-
-        disLoadgpLocal = lambdaSlim*fi_hub
-        cpskew= [0 -rvec[3] rvec[2]
-                rvec[3] 0 -rvec[1]
-                -rvec[2] rvec[1] 0]
-        disMomentgp = cpskew*disLoadgpLocal
+        disLoadgpLocal_1 = lambda[1,1]*fx + lambda[1,2]*fy + lambda[1,3]*fz
+        disLoadgpLocal_2 = lambda[2,1]*fx + lambda[2,2]*fy + lambda[2,3]*fz
+        disLoadgpLocal_3 = lambda[3,1]*fx + lambda[3,2]*fy + lambda[3,3]*fz
+        disMomentgp_1 = -zcm*disLoadgpLocal_2 + ycm*disLoadgpLocal_3
+        disMomentgp_2 = zcm*disLoadgpLocal_1
+        disMomentgp_3 = -ycm*disLoadgpLocal_1
 
         if preStress #stress-stiffening/pre-stress calculations
             calculateElement1!(Faxial,integrationFactor,p_N2_x,p_N2_x,SS22)
@@ -716,17 +726,17 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
         end
 
         #distributed/body force load calculations
-        f1 = rhoA*((O2^2 + O3^2)*xbarlocal - O1*O2*ybarlocal - O1*O3*zbarlocal + O3dot*ybarlocal - O2dot*zbarlocal) - disLoadgpLocal[1]
+        f1 = rhoA*((O2^2 + O3^2)*xbarlocal - O1*O2*ybarlocal - O1*O3*zbarlocal + O3dot*ybarlocal - O2dot*zbarlocal) - disLoadgpLocal_1
         calculateVec1!(f1,integrationFactor,N1,F1)
-        f2 = rhoA*((O1^2+O3^2)*ybarlocal - zbarlocal*O2*O3 - xbarlocal*O1*O2 + O1dot*zbarlocal - O3dot*xbarlocal) - disLoadgpLocal[2]
+        f2 = rhoA*((O1^2+O3^2)*ybarlocal - zbarlocal*O2*O3 - xbarlocal*O1*O2 + O1dot*zbarlocal - O3dot*xbarlocal) - disLoadgpLocal_2
         calculateVec1!(f2,integrationFactor,N2,F2)
-        f3 = sectionAeroLift + rhoA*((O1^2+O2^2)*zbarlocal - O3*O1*xbarlocal - O2*O3*ybarlocal + O2dot*xbarlocal - O1dot*ybarlocal) - disLoadgpLocal[3]
+        f3 = sectionAeroLift + rhoA*((O1^2+O2^2)*zbarlocal - O3*O1*xbarlocal - O2*O3*ybarlocal + O2dot*xbarlocal - O1dot*ybarlocal) - disLoadgpLocal_3
         calculateVec1!(f3,integrationFactor,N3,F3)
-        f4 = sectionAeroMoment + rhoA*(xbarlocal*(O1*O2*zcm - ycm*O1*O3)-ybarlocal*(ycm*O2*O3 + zcm*(O1^2+O3^2)) + zbarlocal*(ycm*(O1^2+O2^2)+zcm*O2*O3) + ycm*(O2dot*xbarlocal - O1dot*ybarlocal) - zcm*(O1dot*zbarlocal - O3dot*xbarlocal)) - disMomentgp[1]
+        f4 = sectionAeroMoment + rhoA*(xbarlocal*(O1*O2*zcm - ycm*O1*O3)-ybarlocal*(ycm*O2*O3 + zcm*(O1^2+O3^2)) + zbarlocal*(ycm*(O1^2+O2^2)+zcm*O2*O3) + ycm*(O2dot*xbarlocal - O1dot*ybarlocal) - zcm*(O1dot*zbarlocal - O3dot*xbarlocal)) - disMomentgp_1
         calculateVec1!(f4,integrationFactor,N4,F4)
-        f5 = rhoA*zcm*(xbarlocal*(O2^2+O3^2) - ybarlocal*O1*O2 - zbarlocal*O1*O3 - O2dot*zbarlocal + O3dot*ybarlocal) - disMomentgp[2]
+        f5 = rhoA*zcm*(xbarlocal*(O2^2+O3^2) - ybarlocal*O1*O2 - zbarlocal*O1*O3 - O2dot*zbarlocal + O3dot*ybarlocal) - disMomentgp_2
         calculateVec1!(f5,integrationFactor,N5,F5)
-        f6 = rhoA*ycm*((O1*O3*zbarlocal + O1*O2*ybarlocal)-(xbarlocal*(O2^2+O3^2)) - O3dot*ybarlocal + O2dot*zbarlocal) - disMomentgp[3]
+        f6 = rhoA*ycm*((O1*O3*zbarlocal + O1*O2*ybarlocal)-(xbarlocal*(O2^2+O3^2)) - O3dot*ybarlocal + O2dot*zbarlocal) - disMomentgp_3
         calculateVec1!(f6,integrationFactor,N6,F6)
 
         if aeroElasticOn && (bgp != 0) #aeroelastic calculations
@@ -1073,7 +1083,7 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
     Ce = Ce + CeRayleigh
 
     #compile element force vector
-    Fe = mapVector([F1;F2;F3;F4;F5;F6])
+    Fe = mapVector(F1,F2,F3,F4,F5,F6)
 
     # transform matrices for sweep
     # Note,a negative sweep angle, will sweep away from the direction of
@@ -1096,10 +1106,10 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
     ## Apply concentrated terms, including cross-coupling between concentrated mass and the other terms
     # TODO: should other cross-couplings be included here now since the off-diagonals can be included?
 
-    concMassFlag = !isempty(findall(x->x!=0,concMass))
-    concStiffFlag = !isempty(findall(x->x!=0,concStiff))
-    concDampFlag = !isempty(findall(x->x!=0,concDamp))
-    concLoadFlag = !isempty(findall(x->x!=0,concLoad))
+    concMassFlag = any(!iszero, concMass)
+    concStiffFlag = any(!iszero, concStiff)
+    concDampFlag = any(!iszero, concDamp)
+    concLoadFlag = any(!iszero, concLoad)
     if concMassFlag
         #modify Me for concentrated mass
         Me[1:6,1:6] += concMass[:,1:6]
@@ -1150,8 +1160,7 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
     end
 
     if concMassFlag || concLoadFlag
-        Fe[1:6] += concLoad[:,1]
-        Fe[7:12] += concLoad[:,2]
+        _add_conc_load!(Fe, concLoad)
 
         #modify Fe for  concentrated load
         Fe[1] += concMass[1,1]*(x[1]*(omega_y^2 + omega_z^2)-omega_x*omega_y*y[1] - omega_x*omega_z*z[1]) + concMass[1,1]*(y[1]*omegaDot_z-z[1]*omegaDot_y)  -  concMass[1,1]*a_x
@@ -1183,18 +1192,7 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
         Khate = Ke*a1 + a3.*Ce + Me
         Fhate = Fe*a4 + Me*(A) + Ke*(B) + Ce*(D)
 
-        FhatLessConc =   Fhate - [concLoad[1,1]
-        concLoad[2,1]
-        concLoad[3,1]
-        concLoad[4,1]
-        concLoad[5,1]
-        concLoad[6,1]
-        concLoad[1,2]
-        concLoad[2,2]
-        concLoad[3,2]
-        concLoad[4,2]
-        concLoad[5,2]
-        concLoad[6,2]].*a4
+        FhatLessConc = _without_conc_load(Fhate, concLoad, a4)
 
         #........................................................
 
@@ -1214,9 +1212,9 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
         a7 = timeInt.a7
         a8 = timeInt.a8
 
-        u=copy(disp)
-        udot=copy(dispdot)
-        uddot=copy(dispddot)
+        u=disp
+        udot=dispdot
+        uddot=dispddot
         if (iterationType=="NR")    #considerations if newton raphson iteration is used
             if (input.firstIteration)
                 A = a3*u + a4*udot + a5*uddot
@@ -1236,18 +1234,7 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
             Khate = Kehat + Khate
         end
 
-        FhatLessConc =   Fhate - [concLoad[1,1]
-        concLoad[2,1]
-        concLoad[3,1]
-        concLoad[4,1]
-        concLoad[5,1]
-        concLoad[6,1]
-        concLoad[1,2]
-        concLoad[2,2]
-        concLoad[3,2]
-        concLoad[4,2]
-        concLoad[5,2]
-        concLoad[6,2]]
+        FhatLessConc = _without_conc_load(Fhate, concLoad)
 
         #........................................................
 
@@ -1257,18 +1244,7 @@ function calculateTimoshenkoElementNL(input,elStorage;predef=nothing)
     end
 
     if (analysisType=="M")
-        FhatLessConc =   Fe - [concLoad[1,1]
-        concLoad[2,1]
-        concLoad[3,1]
-        concLoad[4,1]
-        concLoad[5,1]
-        concLoad[6,1]
-        concLoad[1,2]
-        concLoad[2,2]
-        concLoad[3,2]
-        concLoad[4,2]
-        concLoad[5,2]
-        concLoad[6,2]]
+        FhatLessConc = _without_conc_load(Fe, concLoad)
 
         if (iterationType=="DI")
             Fe = Fe*input.loadStep

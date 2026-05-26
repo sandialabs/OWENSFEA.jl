@@ -18,7 +18,7 @@ function initialElementCalculations(feamodel,el,mesh)
     #initial element calculation
     numNodesPerEl = 2
     numDOFPerNode = 6
-    countedNodes = []
+    countedNodes = Int[]
 
     elStorage = Array{ElStorage, 1}(undef, mesh.numEl)
     Tx = eltype(mesh.x)
@@ -48,7 +48,7 @@ function initialElementCalculations(feamodel,el,mesh)
         #get concentrated terms associated with element # TODO: This is redundant and can probably be cleaned up, and might mess up double counting?
         _, massConc, _, _, countedNodes = getElementConcTerms!(feamodel.nodalTerms.concStiff, feamodel.nodalTerms.concMass, feamodel.nodalTerms.concDamp, feamodel.nodalTerms.concLoad, mesh.conn[i, :], numDOFPerNode, countedNodes)
 
-        concMassFlag = !isempty(findall(x->x!=0,massConc))
+        concMassFlag = any(!iszero, massConc)
 
         Omega = 0.0
 
@@ -102,6 +102,9 @@ function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,t
     numDOFPerNode = 6
 
     totalNumDOF = mesh.numNodes * numDOFPerNode
+    jointTransform = feamodel.jointTransform
+    hasJointConstraintsFlag = hasJointConstraints(jointTransform)
+    bcEqidx = findall(x->x==-1,feamodel.BC.map)
     eldisp = zeros(numNodesPerEl*numDOFPerNode)
     eldisp_sm1 = zeros(numNodesPerEl*numDOFPerNode)
     Kg1 = zeros(totalNumDOF,totalNumDOF) #initialize global stiffness and force vector
@@ -128,7 +131,7 @@ function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,t
 
             Kg = zero(Kg1)
             Fg = zero(Fg1)
-            countedNodes = []
+            countedNodes = Int[]
             timeInt = TimoshenkoMatrixWrap!(feamodel,mesh,el,eldisp,
             dispData,Omega,elStorage;Kg,Fg,eldisp_sm1,eldispdot,eldispddot,eldispiter,rbData,CN2H,delta_t,
             OmegaDot,displ_im1,displdot_im1,displddot_im1,iterationCount,predef,countedNodes)
@@ -149,14 +152,18 @@ function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,t
             end
 
             #------ apply constraints on system -----------------------------------
-            Kg = applyConstraints(Kg,feamodel.jointTransform)
-            Fg = applyConstraintsVec(Fg,feamodel.jointTransform)
+            if hasJointConstraintsFlag
+                Kg = applyConstraints(Kg,jointTransform)
+                Fg = applyConstraintsVec(Fg,jointTransform)
+            end
 
             #Apply BCs to global system
-            KgTotal,FgTotal = applyBC(Kg,Fg,feamodel.BC,numDOFPerNode)
+            KgTotal,FgTotal = applyBC!(Kg,Fg,feamodel.BC,numDOFPerNode,bcEqidx)
             solution = KgTotal\FgTotal  #solve for displacements
 
-            solution = feamodel.jointTransform*solution #transform to full dof listing
+            if hasJointConstraintsFlag
+                solution = jointTransform*solution #transform to full dof listing
+            end
 
             if feamodel.nlOn  #calculate norm between current iteration and last iteration
                 if iterationType=="NR"
@@ -198,7 +205,7 @@ function  structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega,OmegaDot,t
         if analysisType != "stiff"
             for reactionNodeNumber = 1:mesh.numNodes
                 try
-                    countedNodes = [] #TODO:??
+                    countedNodes = Int[] #TODO:??
                     FReaction[(reactionNodeNumber-1)*6+1:reactionNodeNumber*6] = calculateReactionForceAtNode(reactionNodeNumber,feamodel,mesh,el,elStorage,timeInt,dispData,displ_im1,rbData,Omega,OmegaDot,CN2H,countedNodes)
                 catch
                     # This is where a joint is println(reactionNodeNumber)
@@ -256,6 +263,10 @@ function applyConstraintsVec(Fg,transMatrix)
     return transMatrix'*Fg
 end
 
+@inline function hasJointConstraints(transMatrix)
+    return size(transMatrix, 1) != size(transMatrix, 2)
+end
+
 """
 This function calculates a relative norm between two vectors: unew and uold
 """
@@ -285,7 +296,7 @@ Internal, function to form total stifness matrix and transform to desired DOF ma
 """
 function mapMatrixNonSym2(K11,K12,K13,K14,K15,K16,K21,K22,K23,K24,K25,K26,K31,K32,K33,K34,K35,K36,K41,K42,K43,K44,K45,K46,K51,K52,K53,K54,K55,K56,K61,K62,K63,K64,K65,K66)
 
-    Ktemp = zeros(12,12)
+    Ktemp = zeros(eltype(K11), 12, 12)
 
     Ktemp[1:2,1:2] = K11
     Ktemp[1:2,3:4] = K12
