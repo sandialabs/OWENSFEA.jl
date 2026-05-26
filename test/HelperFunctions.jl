@@ -49,6 +49,71 @@ end
     @test sum(p_N_x) == 0.0
 end
 
+@testset "SectionPropsArray elastic-axis offsets" begin
+    zeros2 = [0.0, 0.0]
+    rhoA = [1.0, 2.0]
+    base_args = (
+        zeros2,
+        zeros2,
+        rhoA,
+        fill(2.0, 2),
+        fill(3.0, 2),
+        fill(4.0, 2),
+        fill(5.0, 2),
+        fill(0.1, 2),
+        fill(0.2, 2),
+        fill(0.3, 2),
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        zeros2,
+        [2*pi, 2*pi],
+        zeros2,
+    )
+
+    legacy_short = OWENSFEA.SectionPropsArray(base_args...)
+    @test legacy_short.flapwiseEAOffset == zero(rhoA)
+    @test legacy_short.edgewiseEAOffset == zero(rhoA)
+
+    legacy_full = OWENSFEA.SectionPropsArray(
+        base_args...,
+        nothing,
+        nothing,
+        zero(rhoA),
+        zero(rhoA),
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+    )
+    @test legacy_full.flapwiseEAOffset == zero(rhoA)
+    @test legacy_full.edgewiseEAOffset == zero(rhoA)
+
+    explicit_offsets = OWENSFEA.SectionPropsArray(
+        base_args...,
+        nothing,
+        nothing,
+        zero(rhoA),
+        zero(rhoA),
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        [0.11, 0.21],
+        [0.31, 0.41],
+    )
+    @test explicit_offsets.flapwiseEAOffset == [0.11, 0.21]
+    @test explicit_offsets.edgewiseEAOffset == [0.31, 0.41]
+end
+
 @testset "Element accumulation and assembly kernels" begin
     K = zeros(2, 3)
     OWENSFEA.calculateElement1!(2.0, 0.25, [1.0, 2.0], [3.0, 5.0, 7.0], K)
