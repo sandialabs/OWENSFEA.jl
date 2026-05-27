@@ -659,3 +659,145 @@ end
     @test K == original_K
     @test F == original_F
 end
+
+@testset "Static load stepping branch logic" begin
+    adaptive = OWENSFEA.NlParams("DI", true, 1e-6, 5, 4, 0.05, 0.10, [0.25, 0.6, 1.0])
+
+    reduced = OWENSFEA.adaptiveLoadStepping(5, adaptive, 0.6, 0.2)
+    @test reduced == (0.4, 0.2, false, false)
+
+    increased = OWENSFEA.adaptiveLoadStepping(2, adaptive, 0.4, 0.2)
+    @test increased == (0.7, 0.4, true, false)
+
+    complete = OWENSFEA.adaptiveLoadStepping(2, adaptive, 1.0, 0.7)
+    @test complete == (1.0, 1.0, true, true)
+
+    min_delta = OWENSFEA.adaptiveLoadStepping(5, adaptive, 0.43, 0.4)
+    @test min_delta == (0.465, 0.4, false, false)
+
+    over_one = OWENSFEA.adaptiveLoadStepping(5, adaptive, 1.2, 1.0)
+    @test over_one == (1.0, 1.0, false, false)
+
+    min_step = OWENSFEA.NlParams("DI", true, 1e-6, 5, 4, 0.05, 0.10, [0.25, 0.6, 1.0])
+    @test_throws ErrorException OWENSFEA.adaptiveLoadStepping(5, min_step, 0.10, 0.0)
+
+    displ_prev = [1.0, 2.0]
+    displ = [3.0, 4.0]
+    loadStep, loadStepPrev, displ_out, displPrev_out, successful, complete_flag =
+        OWENSFEA.updateLoadStep(5, adaptive, 0.6, 0.2, 2, displ_prev, displ)
+    @test loadStep == 0.4
+    @test loadStepPrev == 0.2
+    @test displ_out == displ_prev
+    @test displPrev_out == displ_prev
+    @test successful === false
+    @test complete_flag === false
+
+    loadStep, loadStepPrev, displ_out, displPrev_out, successful, complete_flag =
+        OWENSFEA.updateLoadStep(2, adaptive, 0.4, 0.2, 2, displ_prev, displ)
+    @test loadStep == 0.7
+    @test loadStepPrev == 0.4
+    @test displ_out == displ
+    @test displPrev_out == displ
+    @test successful === true
+    @test complete_flag === false
+
+    @test_throws ErrorException OWENSFEA.updateLoadStep(
+        2,
+        adaptive,
+        0.4,
+        0.2,
+        adaptive.maxNumLoadSteps + 1,
+        displ_prev,
+        displ,
+    )
+
+    prescribed = OWENSFEA.NlParams("DI", false, 1e-6, 4, 4, 0.05, 0.10, [0.25, 0.6, 1.0])
+    loadStep, loadStepPrev, displ_out, displPrev_out, successful, complete_flag =
+        OWENSFEA.updateLoadStep(2, prescribed, 0.25, 0.0, 2, displ_prev, displ)
+    @test loadStep == 0.6
+    @test loadStepPrev == 0.25
+    @test displ_out == displ
+    @test displPrev_out == displ
+    @test successful === true
+    @test complete_flag === false
+
+    loadStep, loadStepPrev, _, _, successful, complete_flag =
+        OWENSFEA.updateLoadStep(2, prescribed, 1.0, 0.6, 3, displ_prev, displ)
+    @test loadStep == 1.0
+    @test loadStepPrev == 0.6
+    @test successful === true
+    @test complete_flag === true
+
+    @test_throws ErrorException OWENSFEA.updateLoadStep(
+        4,
+        prescribed,
+        0.25,
+        0.0,
+        2,
+        displ_prev,
+        displ,
+    )
+end
+
+@testset "Modal reduction and frequency extraction" begin
+    pBC = [1.0 2.0 0.0]
+    bc_map = [1.0, -1.0, 2.0, 3.0, 4.0, 5.0]
+    BC = OWENSFEA.BC_struct(size(pBC, 1), pBC, 0, 0, [0.0, 1.0, 0.0, 0.0, 0.0, 0.0], bc_map, bc_map)
+    eigvec = complex.(reshape(1.0:10.0, 10, 1), 0.0)
+    reduced = OWENSFEA.constructReducedDispVecFromEigVec(eigvec, collect(1:6), BC)
+
+    @test reduced == ComplexF64[6.0 + 0im, 0.0 + 0im, 7.0 + 0im, 8.0 + 0im, 9.0 + 0im, 10.0 + 0im]
+
+    freq, damp, phase1, phase2, sortedModes = OWENSFEA.extractFreqDamp(
+        -0.5 + 3.0im,
+        eigvec,
+        6,
+        Matrix{Float64}(I, 6, 6),
+        collect(1:6),
+        BC,
+        "M",
+    )
+
+    @test freq == 3.0 / (2π)
+    @test damp == 1.0 / 6.0
+    @test phase1 == [0.6 0.0 0.7 0.8 0.9 1.0]
+    @test phase2 == zeros(1, 6)
+    @test sortedModes == reshape(reduced, 1, 6)
+
+    spring_freq, spring_damp, _, _, _ = OWENSFEA.extractFreqDamp(
+        16.0 + 0.0im,
+        eigvec,
+        6,
+        Matrix{Float64}(I, 6, 6),
+        collect(1:6),
+        BC,
+        "M",
+    )
+    @test spring_freq == 4.0 / (2π)
+    @test spring_damp == 0.0
+end
+
+@testset "Rotating-frame concentrated-load helpers" begin
+    @test collect(OWENSFEA._rotating_frame_inertial_force(
+        2.0,
+        1.0,
+        2.0,
+        3.0,
+        0.1,
+        -0.2,
+        0.3,
+        4.0,
+        -5.0,
+        6.0,
+    )) ≈ [87.4, -189.2, 95.4] atol=1e-12
+
+    conc = zeros(6, 2)
+    conc[:, 1] = 1.0:6.0
+    conc[:, 2] = 7.0:12.0
+    @test OWENSFEA._without_conc_load(collect(1.0:12.0), conc, 0.5) ==
+          [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0]
+
+    Fe = zeros(12)
+    @test OWENSFEA._add_conc_load!(Fe, conc) === Fe
+    @test Fe == vcat(collect(1.0:6.0), collect(7.0:12.0))
+end
