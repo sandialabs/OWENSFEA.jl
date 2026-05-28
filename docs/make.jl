@@ -5,11 +5,16 @@ makedocs(;
     modules = [OWENSFEA],
     pages = [
         "Home" => "index.md",
-        "Quickstart" => "quickstart.md",
+        "Quick Start" => "quickstart.md",
+        "Test-backed Examples" => "examples.md",
         "Model Assembly" => "model_assembly.md",
         "Theory, Frames, and Units" => joinpath("theory", "frames_units.md"),
         "Validation and Testing" => "validation.md",
-        "API Reference" => joinpath("reference", "reference.md"),
+        "Developer Guide" => "developer_guide.md",
+        "Reference" => [
+            "API Map" => joinpath("reference", "reference.md"),
+            "Autodocs by Source" => joinpath("reference", "autodocs.md"),
+        ],
     ],
     sitename = "OWENSFEA.jl",
     authors = "Kevin R. Moore <kevmoor@sandia.gov>",

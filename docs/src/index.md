@@ -1,9 +1,19 @@
-# OWENSFEA
+# OWENSFEA.jl
 
-OWENSFEA is the structural dynamics package in the OWENS toolkit. It provides
-beam finite-element models used for turbine blades, struts, towers, and coupled
-aeroelastic simulations. The code supports modal, nonlinear steady, transient,
-and reduced-order structural workflows.
+```@meta
+CurrentModule = OWENSFEA
+```
+
+OWENSFEA.jl is the structural finite-element package used by the OWENS wind
+energy toolkit. It models slender turbine components with Timoshenko beam
+elements and supplies structural states, strains, modal data, and reaction loads
+to higher-level OWENS workflows.
+
+The package is used most often for vertical-axis wind turbine structures, where
+spin softening, centrifugal stiffening, Coriolis terms, and rotating-frame
+reaction loads can matter. It can also be run as a structural-only beam solver
+for straight or swept cantilevers, modal validation cases, transient tip-load
+response, and reduced-order structural dynamics.
 
 ```@raw html
 <p align="center">
@@ -11,28 +21,42 @@ and reduced-order structural workflows.
 </p>
 ```
 
-The package is based on a Timoshenko beam formulation and the dynamic-system
+The implementation follows the Timoshenko beam formulation and dynamic-system
 work described in:
 
 Owens, B. C., "Theoretical Developments and Practical Aspects of Dynamic Systems
 in Wind Energy Applications," Ph.D. thesis, Texas A & M University, 2013.
 
-## What This Package Owns
+## Capabilities
 
-- structural mesh, element, section-property, and FEA model types;
-- joint constraints, prescribed boundary conditions, and concentrated nodal
-  terms;
-- element stiffness, mass, damping, gravity, spin, and follower-load
-  calculations;
-- linear modal analysis, nonlinear steady solve, transient dynamics, and ROM
-  utilities;
-- structural reactions, strains, and post-solve helper maps used by OWENS.
+| Workflow | Main entry points | Notes |
+| --- | --- | --- |
+| Modal analysis | [`modal`](@ref), [`autoCampbellDiagram`](@ref) | Linearized state-space eigenanalysis, optional spin-up preload, optional matrix export. |
+| Static/steady solve | [`staticAnalysis`](@ref) | Linear or nonlinear load-stepped solve with strains and nodal reactions. |
+| Transient dynamics | [`structuralDynamicsTransient`](@ref) | Newmark-beta (`"TNB"`) and Dean (`"TD"`) paths are selected through [`FEAModel`](@ref). |
+| Reduced-order dynamics | [`reducedOrderModel`](@ref), [`structuralDynamicsTransientROM`](@ref) | Modal reduction with stored spin, gyric, acceleration, and body-force coefficients. |
+| Assembly utilities | `Mesh`, [`SectionPropsArray`](@ref), [`El`](@ref), [`FEAModel`](@ref) | Mesh, section properties, boundary conditions, joints, and concentrated nodal terms. |
+
+## Package Boundaries
+
+OWENSFEA owns structural mesh data, element and section-property data,
+boundary-condition maps, joint transforms, concentrated nodal terms, element
+matrix assembly, structural solvers, strain recovery, and reaction-force
+postprocessing. Aerodynamic loading, turbine-level controls, and pre-processing
+of composite section data are normally handled by other OWENS packages before
+being mapped into OWENSFEA inputs.
+
+The maintained test suite is the best executable specification for the current
+behavior. The examples page summarizes those cases and points to the exact test
+files that pin the contracts.
 
 ## Where To Start
 
-- Use the quickstart for a minimal model and test-backed workflow references.
-- Use model assembly before changing meshes, joints, boundary conditions, or
-  concentrated terms.
-- Use the frames and units page before comparing against GXBeam, OpenFAST, or
-  experimental data.
-- Use the validation page before changing solver tolerances or reference data.
+- Use [Quick Start](@ref) for a minimal direct-constructor cantilever workflow.
+- Use [Test-backed Examples](@ref) to find maintained examples from the test
+  suite.
+- Use [Model Assembly](@ref) before changing mesh, joint, boundary-condition, or
+  concentrated-term inputs.
+- Use [Theory, Frames, and Units](@ref) before comparing OWENSFEA against
+  GXBeam, OpenFAST, analytical beam equations, or experiments.
+- Use [Developer Guide](@ref) before changing solver logic or extending the API.
