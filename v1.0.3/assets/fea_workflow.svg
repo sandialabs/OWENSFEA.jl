@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 260" role="img" aria-label="OWENSFEA structural workflow">
+  <defs>
+    <style>
+      .box{fill:#f8fbff;stroke:#255f85;stroke-width:2;rx:10}
+      .core{fill:#fff8ee;stroke:#9a6b1f;stroke-width:2;rx:10}
+      .text{font-family:Arial,Helvetica,sans-serif;font-size:20px;fill:#17212b}
+      .small{font-size:15px;fill:#394b59}
+      .arrow{stroke:#255f85;stroke-width:3;fill:none;marker-end:url(#arrow)}
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#255f85"/>
+    </marker>
+  </defs>
+  <rect class="box" x="28" y="72" width="155" height="92"/>
+  <text class="text" x="61" y="110">Mesh</text>
+  <text class="small" x="51" y="136">nodes, elements,</text>
+  <text class="small" x="63" y="154">orientations</text>
+  <path class="arrow" d="M183 118 H245"/>
+  <rect class="box" x="245" y="72" width="170" height="92"/>
+  <text class="text" x="279" y="110">Sections</text>
+  <text class="small" x="272" y="136">EA, EI, GJ, mass,</text>
+  <text class="small" x="291" y="154">offsets</text>
+  <path class="arrow" d="M415 118 H480"/>
+  <rect class="core" x="480" y="54" width="190" height="128"/>
+  <text class="text" x="515" y="101">FEAModel</text>
+  <text class="small" x="508" y="128">BCs, joints, loads,</text>
+  <text class="small" x="520" y="148">solver options</text>
+  <path class="arrow" d="M670 118 H735"/>
+  <rect class="box" x="735" y="72" width="155" height="92"/>
+  <text class="text" x="768" y="110">Solve</text>
+  <text class="small" x="760" y="136">modal, steady,</text>
+  <text class="small" x="771" y="154">transient</text>
+  <path class="arrow" d="M575 182 V226 H107 V164"/>
+  <text class="small" x="266" y="245">displacements, strains, reactions, updated state</text>
+</svg>
