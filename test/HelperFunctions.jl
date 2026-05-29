@@ -605,6 +605,18 @@ end
     end
 end
 
+@testset "Joint slave node maps to matching master for element lookup" begin
+    conn = [1 2; 3 4; 5 6]
+    joint = [
+        1.0 2.0 3.0 0.0 0.0 0.0 0.0 0.0
+        2.0 6.0 5.0 0.0 0.0 0.0 0.0 0.0
+    ]
+
+    elList, localNode = OWENSFEA.findElementsAssociatedWithNodeNumber(3, conn, joint)
+    @test elList == [2, 1]
+    @test localNode == [1, 2]
+end
+
 @testset "Concentrated nodal term parsing" begin
     full_terms = Any[
         1 "M6" 2 3 4.5;

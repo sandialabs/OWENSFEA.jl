@@ -1356,11 +1356,12 @@ function findElementsAssociatedWithNodeNumber(nodeNum,conn,jointData)
         #first see if specified node is a slave node in a joint constraint
         # keep this here for future translation from matlab: res2 = find(ismember(jointData(:,3),nodeNum)) #search joint data slave nodes for node number
         #if it is, change it to the corresponding master node
-        if any(x->x==nodeNum,jointData[:,3])
-            nodeNum = jointData[end,2]
-            if length(jointData)>1
+        res2 = findall(x->x==nodeNum,jointData[:,3])
+        if !isempty(res2)
+            if length(res2)>1
                 error("Incorrect Joint Data and nodeNum, too many joints")
             end
+            nodeNum = jointData[res2[1],2]
         end
 
         for jointIndex in axes(jointData, 1)
