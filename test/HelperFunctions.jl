@@ -83,6 +83,40 @@ end
     @test legacy_short.flapwiseEAOffset == zero(rhoA)
     @test legacy_short.edgewiseEAOffset == zero(rhoA)
 
+    offsets_only = OWENSFEA.SectionPropsArray(base_args..., [0.1, 0.2], [0.3, 0.4])
+    @test offsets_only.xaf == [0.1, 0.2]
+    @test offsets_only.yaf == [0.3, 0.4]
+    @test offsets_only.added_M22 == zero(rhoA)
+    @test offsets_only.added_M33 == zero(rhoA)
+    @test offsets_only.GAy === nothing
+    @test offsets_only.GAz === nothing
+
+    with_added_mass = OWENSFEA.SectionPropsArray(
+        base_args...,
+        [0.1, 0.2],
+        [0.3, 0.4],
+        [1.1, 1.2],
+        [1.3, 1.4],
+    )
+    @test with_added_mass.added_M22 == [1.1, 1.2]
+    @test with_added_mass.added_M33 == [1.3, 1.4]
+    @test with_added_mass.GAy === nothing
+    @test with_added_mass.GAz === nothing
+
+    with_shear = OWENSFEA.SectionPropsArray(
+        base_args...,
+        [0.1, 0.2],
+        [0.3, 0.4],
+        [1.1, 1.2],
+        [1.3, 1.4],
+        [6.1, 6.2],
+        [7.1, 7.2],
+    )
+    @test with_shear.GAy == [6.1, 6.2]
+    @test with_shear.GAz == [7.1, 7.2]
+    @test with_shear.poisson_ratio === nothing
+    @test with_shear.shear_correction === nothing
+
     legacy_full = OWENSFEA.SectionPropsArray(
         base_args...,
         nothing,
@@ -158,6 +192,10 @@ end
     @test_throws DimensionMismatch OWENSFEA.assembly!(zeros(3, 4), Fe, conn, 2, 2, zeros(8, 8), zeros(8))
     @test_throws DimensionMismatch OWENSFEA.assembly!(Ke, Fe, [0, 4], 2, 2, zeros(8, 8), zeros(8))
     @test_throws DimensionMismatch OWENSFEA.assembly!(Ke, Fe, conn, 2, 2, zeros(7, 7), zeros(7))
+    @test_throws DimensionMismatch OWENSFEA.assembly(Ke, Fe[1:3], conn, 2, 2, zeros(8, 8), zeros(8))
+    @test_throws DimensionMismatch OWENSFEA.assembly(Ke, Fe, [2], 2, 2, zeros(8, 8), zeros(8))
+    @test_throws DimensionMismatch OWENSFEA.assembly(Ke, Fe, conn, 2, 2, zeros(8, 8), zeros(7))
+    @test_throws DimensionMismatch OWENSFEA.assembly(Ke, Fe, conn, 2, 2, zeros(7, 7), zeros(8))
     @test_throws DimensionMismatch OWENSFEA.assemblyMatrixOnly!(zeros(3, 4), conn, 2, 2, zeros(8, 8))
     @test_throws DimensionMismatch OWENSFEA.assemblyMatrixOnly!(Ke, [0, 4], 2, 2, zeros(8, 8))
     @test_throws DimensionMismatch OWENSFEA.assemblyMatrixOnly!(Ke, conn, 2, 2, zeros(7, 7))
