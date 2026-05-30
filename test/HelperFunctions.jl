@@ -83,6 +83,40 @@ end
     @test legacy_short.flapwiseEAOffset == zero(rhoA)
     @test legacy_short.edgewiseEAOffset == zero(rhoA)
 
+    offsets_only = OWENSFEA.SectionPropsArray(base_args..., [0.1, 0.2], [0.3, 0.4])
+    @test offsets_only.xaf == [0.1, 0.2]
+    @test offsets_only.yaf == [0.3, 0.4]
+    @test offsets_only.added_M22 == zero(rhoA)
+    @test offsets_only.added_M33 == zero(rhoA)
+    @test offsets_only.GAy === nothing
+    @test offsets_only.GAz === nothing
+
+    with_added_mass = OWENSFEA.SectionPropsArray(
+        base_args...,
+        [0.1, 0.2],
+        [0.3, 0.4],
+        [1.1, 1.2],
+        [1.3, 1.4],
+    )
+    @test with_added_mass.added_M22 == [1.1, 1.2]
+    @test with_added_mass.added_M33 == [1.3, 1.4]
+    @test with_added_mass.GAy === nothing
+    @test with_added_mass.GAz === nothing
+
+    with_shear = OWENSFEA.SectionPropsArray(
+        base_args...,
+        [0.1, 0.2],
+        [0.3, 0.4],
+        [1.1, 1.2],
+        [1.3, 1.4],
+        [6.1, 6.2],
+        [7.1, 7.2],
+    )
+    @test with_shear.GAy == [6.1, 6.2]
+    @test with_shear.GAz == [7.1, 7.2]
+    @test with_shear.poisson_ratio === nothing
+    @test with_shear.shear_correction === nothing
+
     legacy_full = OWENSFEA.SectionPropsArray(
         base_args...,
         nothing,
@@ -158,6 +192,10 @@ end
     @test_throws DimensionMismatch OWENSFEA.assembly!(zeros(3, 4), Fe, conn, 2, 2, zeros(8, 8), zeros(8))
     @test_throws DimensionMismatch OWENSFEA.assembly!(Ke, Fe, [0, 4], 2, 2, zeros(8, 8), zeros(8))
     @test_throws DimensionMismatch OWENSFEA.assembly!(Ke, Fe, conn, 2, 2, zeros(7, 7), zeros(7))
+    @test_throws DimensionMismatch OWENSFEA.assembly(Ke, Fe[1:3], conn, 2, 2, zeros(8, 8), zeros(8))
+    @test_throws DimensionMismatch OWENSFEA.assembly(Ke, Fe, [2], 2, 2, zeros(8, 8), zeros(8))
+    @test_throws DimensionMismatch OWENSFEA.assembly(Ke, Fe, conn, 2, 2, zeros(8, 8), zeros(7))
+    @test_throws DimensionMismatch OWENSFEA.assembly(Ke, Fe, conn, 2, 2, zeros(7, 7), zeros(8))
     @test_throws DimensionMismatch OWENSFEA.assemblyMatrixOnly!(zeros(3, 4), conn, 2, 2, zeros(8, 8))
     @test_throws DimensionMismatch OWENSFEA.assemblyMatrixOnly!(Ke, [0, 4], 2, 2, zeros(8, 8))
     @test_throws DimensionMismatch OWENSFEA.assemblyMatrixOnly!(Ke, conn, 2, 2, zeros(7, 7))
@@ -605,6 +643,31 @@ end
     end
 end
 
+@testset "Joint slave node maps to matching master for element lookup" begin
+    conn = [1 2; 3 4; 5 6]
+    joint = [
+        1.0 2.0 3.0 0.0 0.0 0.0 0.0 0.0
+        2.0 6.0 5.0 0.0 0.0 0.0 0.0 0.0
+    ]
+
+    elList, localNode = OWENSFEA.findElementsAssociatedWithNodeNumber(3, conn, joint)
+    @test elList == [2, 1]
+    @test localNode == [1, 2]
+
+    directElements, directLocalNodes =
+        OWENSFEA.findElementsAssociatedWithNodeNumber(2, conn, zeros(0, 8))
+    @test directElements == [1]
+    @test directLocalNodes == [2]
+
+    duplicate_slave_joint = [
+        1.0 2.0 3.0 0.0 0.0 0.0 0.0 0.0
+        2.0 6.0 3.0 0.0 0.0 0.0 0.0 0.0
+    ]
+    @test thrown_message(
+        () -> OWENSFEA.findElementsAssociatedWithNodeNumber(3, conn, duplicate_slave_joint),
+    ) == "Incorrect Joint Data and nodeNum, too many joints"
+end
+
 @testset "Concentrated nodal term parsing" begin
     full_terms = Any[
         1 "M6" 2 3 4.5;
@@ -633,6 +696,29 @@ end
     @test diagonal.concLoad[5] == 4.5
     @test thrown_message(() -> OWENSFEA.applyConcentratedTerms(1, 6; data = Any[1 "X" 1 1.0])) ==
         "Unknown Nodal Data Type"
+end
+
+@testset "Element concentrated term extraction avoids double counting" begin
+    Kconc = reshape(collect(1.0:36.0), 6, 6)
+    Mconc = Kconc .+ 100.0
+    Cconc = Kconc .+ 200.0
+    Fconc = collect(1.0:6.0)
+
+    firstK, firstM, firstC, firstF, applied =
+        OWENSFEA.getElementConcTerms!(Kconc, Mconc, Cconc, Fconc, [1, 2], 2, Int[])
+    @test firstK == hcat(Kconc[1:2, 1:2], Kconc[3:4, 3:4])
+    @test firstM == hcat(Mconc[1:2, 1:2], Mconc[3:4, 3:4])
+    @test firstC == hcat(Cconc[1:2, 1:2], Cconc[3:4, 3:4])
+    @test firstF == hcat(Fconc[1:2], Fconc[3:4])
+    @test applied == [1, 2]
+
+    repeatedK, repeatedM, repeatedC, repeatedF, repeatedApplied =
+        OWENSFEA.getElementConcTerms!(Kconc, Mconc, Cconc, Fconc, [1, 3], 2, [1])
+    @test repeatedK == hcat(zeros(2, 2), Kconc[5:6, 5:6])
+    @test repeatedM == hcat(zeros(2, 2), Mconc[5:6, 5:6])
+    @test repeatedC == hcat(zeros(2, 2), Cconc[5:6, 5:6])
+    @test repeatedF == hcat(zeros(2), Fconc[5:6])
+    @test repeatedApplied == [1, 3]
 end
 
 @testset "Static boundary-condition application" begin
@@ -800,4 +886,34 @@ end
     Fe = zeros(12)
     @test OWENSFEA._add_conc_load!(Fe, conc) === Fe
     @test Fe == vcat(collect(1.0:6.0), collect(7.0:12.0))
+end
+
+@testset "GXBeam prescribed-condition force plumbing" begin
+    mesh = OWENSFEA.Mesh(
+        [1, 2],
+        1,
+        2,
+        [0.0, 1.0],
+        [0.0, 0.0],
+        [0.0, 0.0],
+        [1],
+        [1 2],
+        [0.0],
+        [1.0],
+        [0.0 1.0],
+        [1 2],
+        [1 1],
+    )
+    prescribed = OWENSFEA.setPrescribedConditions(
+        mesh;
+        pBC = [1 1 0.0],
+        Fexternal = collect(1.0:12.0),
+    )
+
+    @test prescribed[1].pd == Bool[1, 0, 0, 0, 0, 0]
+    @test prescribed[1].Ff == [0.0, 2.0, 3.0]
+    @test prescribed[1].Mf == [4.0, 5.0, 6.0]
+    @test prescribed[2].pd == falses(6)
+    @test prescribed[2].Ff == [7.0, 8.0, 9.0]
+    @test prescribed[2].Mf == [10.0, 11.0, 12.0]
 end
