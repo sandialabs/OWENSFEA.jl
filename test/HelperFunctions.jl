@@ -660,6 +660,29 @@ end
         "Unknown Nodal Data Type"
 end
 
+@testset "Element concentrated term extraction avoids double counting" begin
+    Kconc = reshape(collect(1.0:36.0), 6, 6)
+    Mconc = Kconc .+ 100.0
+    Cconc = Kconc .+ 200.0
+    Fconc = collect(1.0:6.0)
+
+    firstK, firstM, firstC, firstF, applied =
+        OWENSFEA.getElementConcTerms!(Kconc, Mconc, Cconc, Fconc, [1, 2], 2, Int[])
+    @test firstK == hcat(Kconc[1:2, 1:2], Kconc[3:4, 3:4])
+    @test firstM == hcat(Mconc[1:2, 1:2], Mconc[3:4, 3:4])
+    @test firstC == hcat(Cconc[1:2, 1:2], Cconc[3:4, 3:4])
+    @test firstF == hcat(Fconc[1:2], Fconc[3:4])
+    @test applied == [1, 2]
+
+    repeatedK, repeatedM, repeatedC, repeatedF, repeatedApplied =
+        OWENSFEA.getElementConcTerms!(Kconc, Mconc, Cconc, Fconc, [1, 3], 2, [1])
+    @test repeatedK == hcat(zeros(2, 2), Kconc[5:6, 5:6])
+    @test repeatedM == hcat(zeros(2, 2), Mconc[5:6, 5:6])
+    @test repeatedC == hcat(zeros(2, 2), Cconc[5:6, 5:6])
+    @test repeatedF == hcat(zeros(2), Fconc[5:6])
+    @test repeatedApplied == [1, 3]
+end
+
 @testset "Static boundary-condition application" begin
     K = [10.0 2.0 3.0 4.0;
          2.0 20.0 5.0 6.0;
