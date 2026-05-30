@@ -887,3 +887,33 @@ end
     @test OWENSFEA._add_conc_load!(Fe, conc) === Fe
     @test Fe == vcat(collect(1.0:6.0), collect(7.0:12.0))
 end
+
+@testset "GXBeam prescribed-condition force plumbing" begin
+    mesh = OWENSFEA.Mesh(
+        [1, 2],
+        1,
+        2,
+        [0.0, 1.0],
+        [0.0, 0.0],
+        [0.0, 0.0],
+        [1],
+        [1 2],
+        [0.0],
+        [1.0],
+        [0.0 1.0],
+        [1 2],
+        [1 1],
+    )
+    prescribed = OWENSFEA.setPrescribedConditions(
+        mesh;
+        pBC = [1 1 0.0],
+        Fexternal = collect(1.0:12.0),
+    )
+
+    @test prescribed[1].pd == Bool[1, 0, 0, 0, 0, 0]
+    @test prescribed[1].Ff == [0.0, 2.0, 3.0]
+    @test prescribed[1].Mf == [4.0, 5.0, 6.0]
+    @test prescribed[2].pd == falses(6)
+    @test prescribed[2].Ff == [7.0, 8.0, 9.0]
+    @test prescribed[2].Mf == [10.0, 11.0, 12.0]
+end
