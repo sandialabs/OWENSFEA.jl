@@ -615,6 +615,19 @@ end
     elList, localNode = OWENSFEA.findElementsAssociatedWithNodeNumber(3, conn, joint)
     @test elList == [2, 1]
     @test localNode == [1, 2]
+
+    directElements, directLocalNodes =
+        OWENSFEA.findElementsAssociatedWithNodeNumber(2, conn, zeros(0, 8))
+    @test directElements == [1]
+    @test directLocalNodes == [2]
+
+    duplicate_slave_joint = [
+        1.0 2.0 3.0 0.0 0.0 0.0 0.0 0.0
+        2.0 6.0 3.0 0.0 0.0 0.0 0.0 0.0
+    ]
+    @test thrown_message(
+        () -> OWENSFEA.findElementsAssociatedWithNodeNumber(3, conn, duplicate_slave_joint),
+    ) == "Incorrect Joint Data and nodeNum, too many joints"
 end
 
 @testset "Concentrated nodal term parsing" begin
